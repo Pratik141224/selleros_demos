@@ -14,7 +14,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from shared.claude_client import call_claude
+from shared.llm_router import call, TaskType
 
 # ─────────────────────────────────────────────
 # CATEGORY LABELS
@@ -246,7 +246,7 @@ def run_persona_analysis(
         price_line=price_line,
     )
 
-    pass1_result = call_claude(PASS1_SYSTEM, pass1_user, max_tokens=3000)
+    pass1_result = call(task_type=TaskType.CREATIVE, system=PASS1_SYSTEM, user=pass1_user, max_tokens=3000).content
 
     # ── PASS 2 ──────────────────────────────
     print("[SellerOS] Pass 2: COSMO clustering + persona-targeted rewrite...")
@@ -279,7 +279,7 @@ def run_persona_analysis(
         fit_gaps=fit_gaps,
     )
 
-    pass2_result = call_claude(PASS2_SYSTEM, pass2_user, max_tokens=3000)
+    pass2_result = call(task_type=TaskType.CREATIVE, system=PASS2_SYSTEM, user=pass2_user, max_tokens=3000).content
 
     # ── MERGE RESULTS ──────────────────────
     return {

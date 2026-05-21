@@ -12,7 +12,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from shared.claude_client import call_claude
+from shared.llm_router import call, TaskType
 from omkar_client import build_competitor_block
 
 CATEGORY_LABELS = {
@@ -227,9 +227,10 @@ def run_ab_optimization(
     # ── PASS 1 ──────────────────────────────
     print("[SellerOS] Pass 1: Generating A9 discovery variant...")
 
-    pass1_result = call_claude(
-        PASS1_SYSTEM,
-        PASS1_USER_TEMPLATE.format(
+    pass1_result = call(
+        task_type=TaskType.STRUCTURED,
+        system=PASS1_SYSTEM,
+        user=PASS1_USER_TEMPLATE.format(
             category=category_label,
             title=title,
             bullets=bullets_text,
@@ -237,7 +238,7 @@ def run_ab_optimization(
             competitor_block=comp_block_kw,
         ),
         max_tokens=2500,
-    )
+    ).content
 
     variant_a = pass1_result.get("variant_a", {})
     va_title  = variant_a.get("title", title)
@@ -246,9 +247,10 @@ def run_ab_optimization(
     # ── PASS 2 ──────────────────────────────
     print("[SellerOS] Pass 2: Generating Rufus conversion variant...")
 
-    pass2_result = call_claude(
-        PASS2_SYSTEM,
-        PASS2_USER_TEMPLATE.format(
+    pass2_result = call(
+        task_type=TaskType.CREATIVE,
+        system=PASS2_SYSTEM,
+        user=PASS2_USER_TEMPLATE.format(
             category=category_label,
             title=title,
             bullets=bullets_text,
@@ -257,7 +259,7 @@ def run_ab_optimization(
             variant_a_title=va_title,
         ),
         max_tokens=2500,
-    )
+    ).content
 
     variant_b = pass2_result.get("variant_b", {})
     vb_title  = variant_b.get("title", title)
@@ -266,9 +268,10 @@ def run_ab_optimization(
     # ── PASS 3 ──────────────────────────────
     print("[SellerOS] Pass 3: Scoring + generating hybrid recommendation...")
 
-    pass3_result = call_claude(
-        PASS3_SYSTEM,
-        PASS3_USER_TEMPLATE.format(
+    pass3_result = call(
+        task_type=TaskType.SCORING,
+        system=PASS3_SYSTEM,
+        user=PASS3_USER_TEMPLATE.format(
             va_title=va_title,
             va_kd=va_scores.get("keyword_density", 0),
             va_ia=va_scores.get("intent_alignment", 0),
@@ -280,7 +283,7 @@ def run_ab_optimization(
             category=category_label,
         ),
         max_tokens=1500,
-    )
+    ).content
 
     # ── MERGE ────────────────────────────────
     # Use pass 3's refined scores if available, fallback to pass 1/2 scores
