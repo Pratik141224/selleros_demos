@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SellerOS — Title & Bullet ABD Optimizer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#faf8f4; --bg2:#f2efe8; --bg3:#e8e4da;
+  --card:#fff; --ink:#0f0e0c; --ink2:#3d3b36; --ink3:#7a7870;
+  --border:#dedad2; --border2:#ccc8c0;
+  --amber:#c97c1a; --amberbg:#fef7ec; --amberb:#f5d99a;
+  --teal:#0e7a6c; --tealbg:#edf7f5; --tealb:#8fd4cc;
+  --red:#c0392b; --redbg:#fdf1f0; --redb:#f5b8b3;
+  --green:#1a7a3a; --greenbg:#eaf6ee; --greenb:#9dd9b0;
+  --shadow:0 1px 3px rgba(15,14,12,.08),0 4px 16px rgba(15,14,12,.04);
+  --shadow-lg:0 4px 24px rgba(15,14,12,.12),0 1px 4px rgba(15,14,12,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.65}
+
+/* HEADER */
+.header{background:var(--ink);padding:18px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #222}
+.brand{display:flex;align-items:center;gap:11px}
+.logo-sq{width:30px;height:30px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:16px;color:#fff}
+.brand-name{font-family:'DM Serif Display',serif;font-size:19px;color:#faf8f4;letter-spacing:-.02em}
+.brand-sub{font-size:11px;color:#888;letter-spacing:.05em;text-transform:uppercase;margin-top:1px}
+.demo-tag{font-size:11px;color:#666;border:1px solid #333;padding:3px 10px;border-radius:20px}
+
+/* MAIN */
+.main{max-width:1140px;margin:0 auto;padding:38px 40px 80px}
+
+/* INTRO */
+.intro{margin-bottom:34px}
+.intro h1{font-family:'DM Serif Display',serif;font-size:34px;letter-spacing:-.02em;line-height:1.15;color:var(--ink);margin-bottom:9px}
+.intro h1 em{color:var(--amber);font-style:italic}
+.intro p{font-size:14px;color:var(--ink3);max-width:540px;line-height:1.75}
+
+/* INPUT */
+.input-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 30px;margin-bottom:24px;box-shadow:var(--shadow)}
+.sec-eye{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.sec-eye::before{content:'';width:5px;height:5px;background:var(--amber);border-radius:50%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.fg{margin-bottom:14px}
+.fg:last-child{margin-bottom:0}
+label{display:block;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:5px}
+.hint{font-size:11px;color:var(--ink3);margin-top:3px}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(201,124,26,.12);background:#fff}
+textarea{min-height:52px;line-height:1.6}
+.bullets-list{display:flex;flex-direction:column;gap:7px}
+.bi{display:flex;align-items:flex-start;gap:8px}
+.bnum{width:22px;height:22px;background:var(--bg2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--ink3);flex-shrink:0;margin-top:8px}
+.btn-run{width:100%;padding:13px 24px;background:var(--ink);color:#faf8f4;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s;margin-top:6px;letter-spacing:-.01em}
+.btn-run:hover{background:#1f1e1a}
+.btn-run:disabled{background:var(--bg3);color:var(--ink3);cursor:not-allowed}
+.spin{width:15px;height:15px;border:2px solid rgba(250,248,244,.3);border-top-color:#faf8f4;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:10px 14px;color:var(--red);font-size:13px;margin-bottom:10px;display:none}
+
+/* LOADING */
+.loading{display:none;padding:52px 0;text-align:center}
+.ld-lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:20px}
+.pipeline{display:flex;align-items:center;justify-content:center;max-width:680px;margin:0 auto 24px}
+.ps{text-align:center;flex:1}
+.pd{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:11px;color:var(--ink3);transition:all .4s}
+.pd.active{background:var(--ink);border-color:var(--ink);color:#faf8f4;animation:pd 1s infinite}
+.pd.done{background:var(--teal);border-color:var(--teal);color:#fff;animation:none}
+@keyframes pd{0%,100%{box-shadow:0 0 0 0 rgba(15,14,12,.3)}50%{box-shadow:0 0 0 5px rgba(15,14,12,0)}}
+.pc-conn{width:36px;height:1px;background:var(--border);flex-shrink:0;margin-top:-21px}
+.pl{font-size:11px;color:var(--ink3);line-height:1.4;max-width:90px;margin:0 auto}
+.ld-status{font-size:13px;color:var(--ink3);font-style:italic}
+
+/* RESULTS */
+#results{display:none}
+.rbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.rtitle{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-.02em}
+.ai-tag{font-size:11px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;padding:3px 11px;border-radius:20px;background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+
+/* Score bar */
+.scores-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:24px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+.sc-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:9px}
+.sc-compare{display:flex;align-items:center;gap:9px}
+.sc-old{font-family:'DM Mono',monospace;font-size:26px;color:var(--ink3)}
+.sc-arr{color:var(--ink3);font-size:16px}
+.sc-new{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--teal)}
+.sc-delta{font-size:12px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+
+/* Variant cards */
+.var-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:12px}
+.variants{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.vc{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.vc-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.vc-type{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.va .vc-type{color:var(--amber)} .vb .vc-type{color:var(--teal)}
+.vbadge{font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px}
+.badge-disc{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb)}
+.badge-conv{background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+.vc-body{padding:18px}
+.vf-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
+.v-title{font-family:'DM Mono',monospace;font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;line-height:1.6;color:var(--ink);margin-bottom:4px}
+.ccount{font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3);margin-bottom:13px}
+.ccount.ok{color:var(--teal)} .ccount.warn{color:var(--amber)}
+.bullet-item{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid var(--bg2);font-size:13px;line-height:1.55;color:var(--ink2)}
+.bullet-item:last-child{border-bottom:none}
+.bmark{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;margin-top:1px}
+.ma{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb)}
+.mb{background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+.kw-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.kc{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.kc-a{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb)}
+.kc-b{background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+.metric-rows{margin-top:13px}
+.mrow{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.mlbl{font-size:12px;color:var(--ink3);width:120px;flex-shrink:0}
+.mtrack{flex:1;height:5px;background:var(--bg3);border-radius:10px;overflow:hidden}
+.mfill{height:100%;border-radius:10px;transition:width 1s ease}
+.fill-a{background:var(--amber)} .fill-b{background:var(--teal)}
+.mval{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink2);width:26px;text-align:right}
+
+/* Tradeoff */
+.tradeoff{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px 22px;margin-bottom:22px;box-shadow:var(--shadow)}
+.tradeoff-title{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:13px;display:flex;align-items:center;gap:7px}
+.trow{display:flex;gap:12px;margin-bottom:9px;font-size:13px;color:var(--ink2);line-height:1.6}
+.trow:last-child{margin-bottom:0}
+.trow strong{color:var(--ink);font-weight:500}
+.tic{font-size:16px;flex-shrink:0}
+
+/* Hybrid */
+.hybrid{background:var(--ink);border-radius:14px;padding:22px 26px;margin-bottom:22px;box-shadow:var(--shadow-lg)}
+.hy-head{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.hy-icon{width:33px;height:33px;background:var(--amber);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.hy-title{font-family:'DM Serif Display',serif;font-size:17px;color:#faf8f4;letter-spacing:-.01em}
+.hy-sub{font-size:12px;color:#666;margin-top:1px}
+.hy-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#666;margin-bottom:6px}
+.hy-box{font-family:'DM Mono',monospace;font-size:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:11px 14px;color:#c8d4c0;line-height:1.7;margin-bottom:13px}
+.hy-rat{font-size:13px;color:#888;line-height:1.75}
+.hy-rat strong{color:#c8d4c0;font-weight:500}
+
+/* Impact */
+.impact{background:var(--amberbg);border:1px solid var(--amberb);border-radius:13px;padding:18px 22px;margin-bottom:22px}
+.imp-eye{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--amber);margin-bottom:13px;display:flex;align-items:center;gap:7px}
+.imp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.ig-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--amber);line-height:1;margin-bottom:3px}
+.ig-lbl{font-size:11px;color:var(--ink3);line-height:1.4}
+
+/* Mode tabs */
+.mode-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:20px;width:fit-content}
+.mode-tab{padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--ink3);font-family:'DM Sans',sans-serif;transition:all .15s;letter-spacing:-.01em}
+.mode-tab.active{background:var(--ink);color:#faf8f4}
+.mode-tab:not(.active):hover{background:var(--bg2)}
+
+/* ASIN fetch section */
+.asin-row{display:flex;gap:9px;align-items:flex-start;margin-bottom:14px}
+.asin-row input{flex:1}
+.btn-fetch{padding:9px 18px;background:var(--amber);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:background .15s;flex-shrink:0}
+.btn-fetch:hover{background:#b56d13}
+.btn-fetch:disabled{background:var(--bg3);color:var(--ink3);cursor:not-allowed}
+.spin-sm{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.fetch-err{background:var(--redbg);border:1px solid var(--redb);border-radius:7px;padding:8px 12px;color:var(--red);font-size:13px;margin-bottom:10px;display:none}
+
+/* Fetched listing banner */
+.fetched-banner{background:var(--greenbg);border:1px solid var(--greenb);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:none}
+.fb-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.fb-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--green)}
+.fb-asin{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink3)}
+.fb-cat{font-size:12px;color:var(--ink2);margin-bottom:8px}
+.comp-chips{display:flex;flex-wrap:wrap;gap:5px}
+.comp-chip{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:#fff;border:1px solid var(--greenb);color:var(--ink2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.v-desc{font-size:13px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;line-height:1.7;color:var(--ink2);margin-bottom:13px;max-height:160px;overflow-y:auto}
+.v-desc b{font-weight:500;color:var(--ink)}
+.disclaimer{font-size:11px;color:var(--ink3);text-align:center;line-height:1.7;margin-top:24px}
+
+@media(max-width:768px){
+  .main{padding:22px 18px 60px}
+  .header{padding:14px 18px}
+  .variants,.scores-row,.imp-grid{grid-template-columns:1fr}
+  .intro h1{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="brand">
+      <div class="logo-sq">S</div>
+      <span class="brand-name">SellerOS</span>
+    </div>
+    <div class="brand-sub">Title, Bullet &amp; Description ABD Optimizer</div>
+  </div>
+  <div class="demo-tag">Demo 04</div>
+</div>
+
+<div class="main">
+
+  <div class="intro">
+    <h1>Optimize for <em>discovery</em><br>or <em>conversion</em> — or both.</h1>
+    <p>Enter your ASIN and SellerOS auto-fetches your listing, pulls top-5 category competitors, then generates two optimized variants — one for A9 discovery, one for Rufus conversion — plus a hybrid recommendation.</p>
+  </div>
+
+  <div class="input-card">
+    <div class="sec-eye">Product listing input</div>
+
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-asin" onclick="switchMode('asin')">ASIN Lookup</button>
+      <button class="mode-tab" id="tab-manual" onclick="switchMode('manual')">Manual Entry</button>
+    </div>
+
+    <!-- ASIN input section -->
+    <div id="asin-section">
+      <div class="fg" style="margin-bottom:8px">
+        <label>Amazon ASIN or product URL</label>
+        <div class="asin-row">
+          <input type="text" id="inp-asin" placeholder="e.g. B0DDPRNT22 or https://www.amazon.in/dp/B0DDPRNT22">
+          <button class="btn-fetch" id="fetch-btn" onclick="fetchListing()">
+            <div class="spin-sm" id="fetch-spin"></div>
+            <span id="fetch-txt">Fetch Listing</span>
+          </button>
+        </div>
+        <div class="hint">Works with amazon.in · amazon.com · Bare ASIN (10 chars)</div>
+      </div>
+      <div class="fetch-err" id="fetch-err"></div>
+
+      <!-- Competitor preview — shown after fetch -->
+      <div class="fetched-banner" id="fetched-banner">
+        <div class="fb-row">
+          <span class="fb-label">Listing fetched</span>
+          <span class="fb-asin" id="fb-asin"></span>
+        </div>
+        <div class="fb-cat" id="fb-cat"></div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--green);margin-bottom:5px">Top competitors pulled</div>
+        <div class="comp-chips" id="comp-chips"></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fg" style="margin-bottom:0">
+        <label>Product category</label>
+        <select id="inp-cat">
+          <option value="electronics">Electronics — Earphones / Headphones</option>
+          <option value="fashion">Fashion — Men's T-shirts</option>
+          <option value="kitchen">Kitchen — Cookware / Pans</option>
+          <option value="fitness">Sports — Yoga Mats</option>
+          <option value="skincare">Beauty — Moisturisers</option>
+          <option value="custom">Other</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label>Current A9 score <span style="font-weight:400;color:var(--ink3)">(optional)</span></label>
+        <input type="text" id="inp-score" placeholder="e.g. 42 — leave blank to auto-detect">
+      </div>
+    </div>
+
+    <div class="fg" style="margin-top:14px">
+      <label>Current product title</label>
+      <input type="text" id="inp-title" placeholder="e.g. boAt Rockerz 450 Bluetooth Headphone with 15 Hours Playback, 40mm Drivers">
+      <div class="hint">Paste your live title exactly as it appears on Amazon</div>
+    </div>
+
+    <div class="fg">
+      <label>Current bullet points</label>
+      <div class="bullets-list">
+        <div class="bi"><div class="bnum">1</div><textarea id="b1" placeholder="Bullet 1..."></textarea></div>
+        <div class="bi"><div class="bnum">2</div><textarea id="b2" placeholder="Bullet 2..."></textarea></div>
+        <div class="bi"><div class="bnum">3</div><textarea id="b3" placeholder="Bullet 3..."></textarea></div>
+        <div class="bi"><div class="bnum">4</div><textarea id="b4" placeholder="Bullet 4..."></textarea></div>
+        <div class="bi"><div class="bnum">5</div><textarea id="b5" placeholder="Bullet 5 (optional)..."></textarea></div>
+      </div>
+      <div class="hint">Paste at least 2 bullets — all 5 gives better results</div>
+    </div>
+
+    <div class="fg">
+      <label>Current product description <span style="font-weight:400;color:var(--ink3)">(optional — improves output quality)</span></label>
+      <textarea id="inp-desc" style="min-height:90px" placeholder="Paste your existing A+ or backend description here..."></textarea>
+      <div class="hint">≤2000 chars. Leave blank if you don't have one yet.</div>
+    </div>
+
+    <div class="err" id="err-msg"></div>
+    <button class="btn-run" id="run-btn" onclick="runOptimizer()">
+      <div class="spin" id="spinner"></div>
+      <span id="btn-txt">Generate A/B Variants →</span>
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="ld-lbl">SellerOS pipeline running</div>
+    <div class="pipeline">
+      <div class="ps"><div class="pd active" id="ld1">1</div><div class="pl">A9 discovery variant</div></div>
+      <div class="pc-conn"></div>
+      <div class="ps"><div class="pd" id="ld2">2</div><div class="pl">Rufus conversion variant</div></div>
+      <div class="pc-conn"></div>
+      <div class="ps"><div class="pd" id="ld3">3</div><div class="pl">Scoring + hybrid merge</div></div>
+    </div>
+    <div class="ld-status" id="ld-status">Generating A9 keyword-optimised discovery variant...</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="rbar">
+      <div class="rtitle">Optimization Results</div>
+      <div class="ai-tag">AI-generated · Review before publishing</div>
+    </div>
+
+    <!-- Scores -->
+    <div class="scores-row">
+      <div class="sc"><div class="sc-lbl">A9 compliance score</div><div class="sc-compare"><span class="sc-old" id="a9-old">—</span><span class="sc-arr">→</span><span class="sc-new" id="a9-new">—</span><span class="sc-delta" id="a9-d">—</span></div></div>
+      <div class="sc"><div class="sc-lbl">Rufus readiness score</div><div class="sc-compare"><span class="sc-old" id="rf-old">—</span><span class="sc-arr">→</span><span class="sc-new" id="rf-new">—</span><span class="sc-delta" id="rf-d">—</span></div></div>
+      <div class="sc"><div class="sc-lbl">Keywords added</div><div class="sc-compare"><span class="sc-old" id="kw-old">—</span><span class="sc-arr">→</span><span class="sc-new" id="kw-new">—</span><span class="sc-delta" id="kw-d">—</span></div></div>
+    </div>
+
+    <!-- Variants -->
+    <div class="var-label">Side-by-side variant comparison</div>
+    <div class="variants">
+
+      <!-- Variant A -->
+      <div class="vc va">
+        <div class="vc-head">
+          <span class="vc-type">Variant A</span>
+          <span class="vbadge badge-disc">Discovery-first · A9</span>
+        </div>
+        <div class="vc-body">
+          <div class="vf-lbl">Title</div>
+          <div class="v-title" id="va-title">—</div>
+          <div class="ccount" id="va-chars">— chars</div>
+          <div class="vf-lbl">Bullets</div>
+          <div id="va-bullets"></div>
+          <div class="vf-lbl" style="margin-top:12px">Description</div>
+          <div class="v-desc" id="va-desc">—</div>
+          <div class="vf-lbl">Keywords added</div>
+          <div class="kw-chips" id="va-kws"></div>
+          <div class="metric-rows">
+            <div class="mrow"><div class="mlbl">Keyword density</div><div class="mtrack"><div class="mfill fill-a" id="va-kd" style="width:0%"></div></div><div class="mval" id="va-kd-v">—</div></div>
+            <div class="mrow"><div class="mlbl">Intent alignment</div><div class="mtrack"><div class="mfill fill-a" id="va-ia" style="width:0%"></div></div><div class="mval" id="va-ia-v">—</div></div>
+            <div class="mrow"><div class="mlbl">Conversion signals</div><div class="mtrack"><div class="mfill fill-a" id="va-cs" style="width:0%"></div></div><div class="mval" id="va-cs-v">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Variant B -->
+      <div class="vc vb">
+        <div class="vc-head">
+          <span class="vc-type">Variant B</span>
+          <span class="vbadge badge-conv">Conversion-first · Rufus</span>
+        </div>
+        <div class="vc-body">
+          <div class="vf-lbl">Title</div>
+          <div class="v-title" id="vb-title">—</div>
+          <div class="ccount" id="vb-chars">— chars</div>
+          <div class="vf-lbl">Bullets</div>
+          <div id="vb-bullets"></div>
+          <div class="vf-lbl" style="margin-top:12px">Description</div>
+          <div class="v-desc" id="vb-desc">—</div>
+          <div class="vf-lbl">Personas & objections covered</div>
+          <div class="kw-chips" id="vb-meta"></div>
+          <div class="metric-rows">
+            <div class="mrow"><div class="mlbl">Keyword density</div><div class="mtrack"><div class="mfill fill-b" id="vb-kd" style="width:0%"></div></div><div class="mval" id="vb-kd-v">—</div></div>
+            <div class="mrow"><div class="mlbl">Intent alignment</div><div class="mtrack"><div class="mfill fill-b" id="vb-ia" style="width:0%"></div></div><div class="mval" id="vb-ia-v">—</div></div>
+            <div class="mrow"><div class="mlbl">Conversion signals</div><div class="mtrack"><div class="mfill fill-b" id="vb-cs" style="width:0%"></div></div><div class="mval" id="vb-cs-v">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tradeoff -->
+    <div class="tradeoff">
+      <div class="tradeoff-title">⚖️ The tradeoff explained</div>
+      <div class="trow"><span class="tic">🔍</span><div><strong>Variant A gets you found more.</strong> Higher keyword density means Amazon's A9 algorithm indexes your product for more search queries — more impressions, more page visits from relevant searches.</div></div>
+      <div class="trow"><span class="tic">🛒</span><div><strong>Variant B converts better once found.</strong> Intent-aligned language and persona-aware bullets address shopper questions directly — Rufus is more likely to recommend it and shoppers are more likely to add to cart.</div></div>
+      <div class="trow"><span class="tic">✦</span><div><strong>The hybrid below balances both.</strong> Front-load the top keywords for A9 compliance, then write the body for the buyer — not the algorithm.</div></div>
+    </div>
+
+    <!-- Hybrid -->
+    <div class="hybrid">
+      <div class="hy-head">
+        <div class="hy-icon">✦</div>
+        <div>
+          <div class="hy-title">SellerOS Hybrid Recommendation</div>
+          <div class="hy-sub">Maximizes both discovery and conversion — the recommended title to publish</div>
+        </div>
+      </div>
+      <div class="hy-lbl">Recommended title</div>
+      <div class="hy-box" id="hybrid-title">—</div>
+      <div class="hy-lbl" style="color:#666">Why this works</div>
+      <div class="hy-rat" id="hybrid-rat">—</div>
+    </div>
+
+    <!-- Impact -->
+    <div class="impact">
+      <div class="imp-eye">📈 Projected traction impact</div>
+      <div class="imp-grid">
+        <div><div class="ig-val" id="imp-ctr">—</div><div class="ig-lbl">Estimated CTR improvement</div></div>
+        <div><div class="ig-val" id="imp-cvr">—</div><div class="ig-lbl">Estimated CVR improvement</div></div>
+        <div><div class="ig-val" id="imp-gmv">—</div><div class="ig-lbl">Est. GMV uplift/month<br><small style="font-family:sans-serif;font-size:10px">(₹1,850 AOV, 500 visits/day)</small></div></div>
+      </div>
+    </div>
+
+    <div class="disclaimer">Scores and projections are AI estimates based on Amazon algorithm best practices as of 2025.<br>Actual results depend on category competition, pricing, and reviews. Always verify before publishing.</div>
+  </div>
+
+</div>
+
+<script>
+let ldTimer;
+let _competitorContext = null;
+let _fetchedCategory   = null;
+
+// ── MODE SWITCH ───────────────────────────────
+function switchMode(mode) {
+  const isAsin = mode === 'asin';
+  document.getElementById('tab-asin').className   = 'mode-tab' + (isAsin ? ' active' : '');
+  document.getElementById('tab-manual').className = 'mode-tab' + (!isAsin ? ' active' : '');
+  document.getElementById('asin-section').style.display = isAsin ? 'block' : 'none';
+  if (!isAsin) {
+    _competitorContext = null;
+    _fetchedCategory   = null;
+    document.getElementById('fetched-banner').style.display = 'none';
+  }
+}
+
+// ── ASIN FETCH ────────────────────────────────
+async function fetchListing() {
+  const asinInput = document.getElementById('inp-asin').value.trim();
+  const fetchErr  = document.getElementById('fetch-err');
+  fetchErr.style.display = 'none';
+
+  if (!asinInput) {
+    fetchErr.textContent = 'Enter an ASIN or Amazon product URL.';
+    fetchErr.style.display = 'block';
+    return;
+  }
+
+  const btn  = document.getElementById('fetch-btn');
+  const spin = document.getElementById('fetch-spin');
+  const txt  = document.getElementById('fetch-txt');
+  btn.disabled = true; spin.style.display = 'block'; txt.textContent = 'Fetching…';
+  document.getElementById('fetched-banner').style.display = 'none';
+
+  try {
+    const res  = await fetch('/api/fetch-listing', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({asin: asinInput})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Populate form fields
+    document.getElementById('inp-title').value = data.title || '';
+    ['b1','b2','b3','b4','b5'].forEach((id, i) => {
+      document.getElementById(id).value = (data.bullets || [])[i] || '';
+    });
+    document.getElementById('inp-desc').value = data.description || '';
+
+    // Store context for the optimize call
+    _competitorContext = data.competitors || [];
+    _fetchedCategory   = data.leaf_category_name || '';
+
+    // Show banner
+    document.getElementById('fb-asin').textContent = data.asin;
+    document.getElementById('fb-cat').textContent  = 'Category: ' + (data.leaf_category_name || '—');
+    document.getElementById('comp-chips').innerHTML = (_competitorContext).map(c =>
+      `<span class="comp-chip" title="${c.title}">${c.title.slice(0,55)}${c.title.length>55?'…':''}</span>`
+    ).join('');
+    document.getElementById('fetched-banner').style.display = 'block';
+
+  } catch(e) {
+    fetchErr.textContent = e.message || 'Failed to fetch listing. Check the ASIN and try again.';
+    fetchErr.style.display = 'block';
+  } finally {
+    btn.disabled = false; spin.style.display = 'none'; txt.textContent = 'Fetch Listing';
+  }
+}
+
+// ── OPTIMIZE ──────────────────────────────────
+async function runOptimizer() {
+  const title = document.getElementById('inp-title').value.trim();
+  const bullets = ['b1','b2','b3','b4','b5']
+    .map(id => document.getElementById(id).value.trim())
+    .filter(Boolean);
+  const err = document.getElementById('err-msg');
+
+  if (!title || bullets.length < 1) {
+    err.textContent = 'Please enter a product title and at least one bullet point.';
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 3000);
+    return;
+  }
+  err.style.display = 'none';
+
+  const btn = document.getElementById('run-btn');
+  const spin = document.getElementById('spinner');
+  const btnTxt = document.getElementById('btn-txt');
+  btn.disabled = true; spin.style.display = 'block';
+  btnTxt.textContent = 'Analyzing...';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  const steps = ['ld1','ld2','ld3'];
+  const msgs = [
+    'Generating A9 keyword-optimised discovery variant...',
+    'Generating Rufus conversion variant...',
+    'Scoring both variants + computing hybrid...'
+  ];
+  let si = 0;
+  ldTimer = setInterval(() => {
+    if (si < steps.length - 1) {
+      const el = document.getElementById(steps[si]);
+      el.className = 'pd done'; el.textContent = '✓';
+      si++;
+      document.getElementById(steps[si]).className = 'pd active';
+      document.getElementById('ld-status').textContent = msgs[si];
+    }
+  }, 7000);
+
+  try {
+    const res = await fetch('/api/optimize', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        title,
+        bullets,
+        description:        document.getElementById('inp-desc').value.trim(),
+        category:           _fetchedCategory || document.getElementById('inp-cat').value,
+        competitor_context: _competitorContext || [],
+      })
+    });
+
+    clearInterval(ldTimer);
+    steps.forEach(s => { const e=document.getElementById(s); e.className='pd done'; e.textContent='✓'; });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    render(data);
+
+  } catch(e) {
+    clearInterval(ldTimer);
+    err.textContent = e.message || 'Something went wrong. Please try again.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; spin.style.display = 'none';
+    btnTxt.textContent = 'Regenerate →';
+    document.getElementById('loading').style.display = 'none';
+    steps.forEach((s,i) => { const e=document.getElementById(s); e.className='pd'; e.textContent=i+1; });
+  }
+}
+
+function render(r) {
+  const orig = r.original_scores || {};
+  const va   = r.variant_a || {};
+  const vb   = r.variant_b || {};
+  const hyb  = r.hybrid || {};
+  const imp  = r.impact || {};
+
+  const vas = va.scores || {};
+  const vbs = vb.scores || {};
+
+  // Scores bar
+  const origA9 = orig.a9_compliance || 38;
+  const origRF = orig.rufus_readiness || 22;
+  const origKW = orig.keywords_found || 4;
+  const newA9  = Math.max(vas.keyword_density||0, vbs.keyword_density||0, origA9+15);
+  const newRF  = Math.max(vas.intent_alignment||0, vbs.intent_alignment||0, origRF+15);
+  const kwAdded = va.keywords_added ? va.keywords_added.length : 0;
+
+  set('a9-old', origA9); set('a9-new', newA9); set('a9-d', '+' + (newA9-origA9));
+  set('rf-old', origRF); set('rf-new', newRF); set('rf-d', '+' + (newRF-origRF));
+  set('kw-old', origKW); set('kw-new', origKW+kwAdded); set('kw-d', '+' + kwAdded);
+
+  // Variant A
+  set('va-title', va.title||'—');
+  const vaChars = (va.title||'').length;
+  const vaChEl = document.getElementById('va-chars');
+  vaChEl.textContent = vaChars + '/200 chars';
+  vaChEl.className = 'ccount ' + (vaChars<=200?'ok':'warn');
+
+  document.getElementById('va-bullets').innerHTML = (va.bullets||[]).map(b=>
+    `<div class="bullet-item"><div class="bmark ma">A</div><div>${b}</div></div>`).join('');
+  document.getElementById('va-desc').innerHTML = va.description || '<span style="color:var(--ink3)">—</span>';
+  document.getElementById('va-kws').innerHTML = (va.keywords_added||[]).map(k=>
+    `<span class="kc kc-a">+ ${k}</span>`).join('');
+
+  animBar('va-kd','va-kd-v', vas.keyword_density||0);
+  animBar('va-ia','va-ia-v', vas.intent_alignment||0);
+  animBar('va-cs','va-cs-v', vas.conversion_signals||0);
+
+  // Variant B
+  set('vb-title', vb.title||'—');
+  const vbChars = (vb.title||'').length;
+  const vbChEl = document.getElementById('vb-chars');
+  vbChEl.textContent = vbChars + '/200 chars';
+  vbChEl.className = 'ccount ' + (vbChars<=200?'ok':'warn');
+
+  document.getElementById('vb-bullets').innerHTML = (vb.bullets||[]).map(b=>
+    `<div class="bullet-item"><div class="bmark mb">B</div><div>${b}</div></div>`).join('');
+  document.getElementById('vb-desc').innerHTML = vb.description || '<span style="color:var(--ink3)">—</span>';
+  const vbMeta = [
+    ...(vb.personas_addressed||[]).map(p=>`<span class="kc kc-b">👤 ${p}</span>`),
+    ...(vb.objections_handled||[]).map(o=>`<span class="kc kc-b">✓ ${o}</span>`)
+  ];
+  document.getElementById('vb-meta').innerHTML = vbMeta.join('');
+
+  animBar('vb-kd','vb-kd-v', vbs.keyword_density||0);
+  animBar('vb-ia','vb-ia-v', vbs.intent_alignment||0);
+  animBar('vb-cs','vb-cs-v', vbs.conversion_signals||0);
+
+  // Hybrid
+  set('hybrid-title', hyb.title||'—');
+  document.getElementById('hybrid-rat').innerHTML = (hyb.rationale||'')
+    .replace(/Variant A/g,'<strong>Variant A</strong>')
+    .replace(/Variant B/g,'<strong>Variant B</strong>')
+    .replace(/A9/g,'<strong>A9</strong>')
+    .replace(/Rufus/g,'<strong>Rufus</strong>');
+
+  // Impact
+  const ctr = imp.ctr_improvement||'9–14%';
+  const cvr = imp.cvr_improvement||'7–12%';
+  set('imp-ctr', ctr); set('imp-cvr', cvr);
+  const ctrH = parseFloat((ctr.split('–')[1]||ctr).replace('%',''))/100;
+  const gmvLow  = Math.round(500*0.03*0.02*1850*30);
+  const gmvHigh = Math.round(500*0.035*0.025*(1+ctrH)*1850*30);
+  set('imp-gmv', '₹'+gmvLow.toLocaleString('en-IN')+'–'+gmvHigh.toLocaleString('en-IN'));
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function set(id, val) { document.getElementById(id).textContent = val; }
+function animBar(barId, valId, score) {
+  document.getElementById(valId).textContent = score;
+  setTimeout(() => document.getElementById(barId).style.width = score + '%', 100);
+}
+</script>
+</body>
+</html>

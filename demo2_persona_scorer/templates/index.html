@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SellerOS — Buyer Persona & Intent Match Scorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f2ed; --bg2:#edeae3; --bg3:#e2ddd5;
+  --card:#fff; --ink:#1a1916; --ink2:#3d3b36;
+  --ink3:#79776f; --border:#d5d0c8; --border2:#c5c0b8;
+  --p1:#1a5c8a; --p1bg:#eaf1f8; --p1b:#b5d2e8;
+  --p2:#7a3e9e; --p2bg:#f3ebfb; --p2b:#d5b5f0;
+  --p3:#1a7a58; --p3bg:#e8f6f1; --p3b:#95d5c0;
+  --gold:#b8860b; --goldbg:#fdf8e7; --goldb:#e5d385;
+  --red:#b83030; --redbg:#fdf0ef; --redb:#f0b5b0;
+  --green:#1a7a3a; --greenbg:#e8f6ee; --greenb:#95d5a8;
+  --shadow:0 1px 4px rgba(26,25,22,.07),0 4px 20px rgba(26,25,22,.04);
+  --shadow-lg:0 8px 40px rgba(26,25,22,.12),0 2px 8px rgba(26,25,22,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.65}
+
+/* TOPBAR */
+.topbar{background:var(--ink);padding:0 36px;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#f5f2ed;letter-spacing:-.02em}
+.logo span{color:#e8a030}
+.demo-badge{font-size:11px;color:#666;border:1px solid #333;padding:3px 10px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+
+/* HERO */
+.hero{background:var(--ink);padding:48px 36px 44px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-80px;right:-80px;width:360px;height:360px;background:radial-gradient(circle,rgba(232,160,48,.07) 0%,transparent 70%);pointer-events:none}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#e8a030;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.eyebrow::before{content:'';display:inline-block;width:20px;height:1px;background:#e8a030}
+.hero h1{font-family:'Syne',sans-serif;font-size:38px;font-weight:700;color:#f5f2ed;letter-spacing:-.03em;line-height:1.1;margin-bottom:14px;max-width:640px}
+.hero h1 em{color:#e8a030;font-style:italic}
+.hero p{font-size:14px;color:#888;max-width:560px;line-height:1.75;margin-bottom:26px}
+.hero-stats{display:flex;gap:32px}
+.hs-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;color:#f5f2ed;line-height:1;margin-bottom:3px}
+.hs-lbl{font-size:11px;color:#666;letter-spacing:.04em;text-transform:uppercase}
+
+/* MAIN */
+.main{max-width:1100px;margin:0 auto;padding:36px 36px 80px}
+
+/* INPUT CARD */
+.input-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 30px;margin-bottom:22px;box-shadow:var(--shadow)}
+.section-eye{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.section-eye::before{content:'';width:5px;height:5px;background:#e8a030;border-radius:50%;display:inline-block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.fg{margin-bottom:14px}
+.fg:last-child{margin-bottom:0}
+label{display:block;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:5px}
+.hint{font-size:11px;color:var(--ink3);margin-top:3px;line-height:1.5}
+input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:#e8a030;box-shadow:0 0 0 3px rgba(232,160,48,.14);background:#fff}
+textarea{min-height:105px;line-height:1.6}
+.btn-run{width:100%;padding:14px 24px;background:var(--ink);color:#f5f2ed;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s;margin-top:6px}
+.btn-run:hover{background:#2a2926}
+.btn-run:disabled{background:var(--bg3);color:var(--ink3);cursor:not-allowed}
+.spinner{width:16px;height:16px;border:2px solid rgba(245,242,237,.3);border-top-color:#f5f2ed;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERROR */
+.err{background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:10px 14px;color:var(--red);font-size:13px;margin-bottom:10px;display:none}
+
+/* LOADING */
+.loading{display:none;padding:52px 0;text-align:center}
+.ld-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:22px}
+.pipeline{display:flex;align-items:center;justify-content:center;gap:0;margin:0 auto 28px;max-width:640px}
+.pip-step{text-align:center;flex:1}
+.pip-dot{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:12px;color:var(--ink3);transition:all .4s}
+.pip-dot.active{background:var(--ink);border-color:var(--ink);color:#f5f2ed;animation:pd 1s infinite}
+.pip-dot.done{background:var(--green);border-color:var(--green);color:#fff;animation:none}
+@keyframes pd{0%,100%{box-shadow:0 0 0 0 rgba(26,25,22,.3)}50%{box-shadow:0 0 0 5px rgba(26,25,22,0)}}
+.pip-lbl{font-size:11px;color:var(--ink3);line-height:1.4;max-width:90px;margin:0 auto}
+.pip-conn{width:36px;height:1px;background:var(--border);flex-shrink:0;margin-top:-21px}
+.ld-status{font-size:13px;color:var(--ink3);font-style:italic}
+
+/* RESULTS */
+#results{display:none}
+.results-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.results-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.live-tag{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:20px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb)}
+
+/* PERSONA CARDS */
+.personas-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:22px}
+.pc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.pc:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.pc.dominant{border-width:2px}
+.pc.dom-p1.dominant{border-color:var(--p1)} .pc.dom-p2.dominant{border-color:var(--p2)} .pc.dom-p3.dominant{border-color:var(--p3)}
+.rank-chip{position:absolute;top:12px;right:12px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+.pc-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:9px}
+.dom-p1 .pc-icon{background:var(--p1bg)} .dom-p2 .pc-icon{background:var(--p2bg)} .dom-p3 .pc-icon{background:var(--p3bg)}
+.pc-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:-.01em;margin-bottom:2px}
+.dom-p1 .pc-name{color:var(--p1)} .dom-p2 .pc-name{color:var(--p2)} .dom-p3 .pc-name{color:var(--p3)}
+.pc-arch{font-size:12px;color:var(--ink3);margin-bottom:11px;line-height:1.4}
+.fit-bar-track{height:4px;background:var(--bg2);border-radius:10px;overflow:hidden;margin-bottom:5px}
+.fit-bar-fill{height:100%;border-radius:10px;transition:width 1s ease}
+.dom-p1 .fit-bar-fill{background:var(--p1)} .dom-p2 .fit-bar-fill{background:var(--p2)} .dom-p3 .fit-bar-fill{background:var(--p3)}
+.fit-row{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3)}
+.fit-score-val{font-family:'JetBrains Mono',monospace;font-weight:500}
+.dom-p1 .fit-score-val{color:var(--p1)} .dom-p2 .fit-score-val{color:var(--p2)} .dom-p3 .fit-score-val{color:var(--p3)}
+.traffic-split{margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-size:11px;color:var(--ink3);display:flex;justify-content:space-between}
+.traffic-split strong{color:var(--ink2)}
+
+/* DOMINANT CALLOUT */
+.dom-callout{border:1px solid var(--goldb);background:var(--goldbg);border-radius:13px;padding:20px 24px;margin-bottom:22px}
+.dc-eye{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.dc-hl{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:7px}
+.dc-body{font-size:14px;color:var(--ink2);line-height:1.7}
+.dc-body strong{color:var(--ink)}
+
+/* DETAIL GRID */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
+.detail-card{background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:var(--shadow)}
+.dcard-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.dcard-title{font-size:13px;font-weight:600;color:var(--ink2)}
+.dcard-score{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:500}
+.dcard-body{padding:16px 18px}
+
+/* FIT DIMENSIONS */
+.fd{margin-bottom:13px}
+.fd:last-child{margin-bottom:0}
+.fd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.fd-lbl{font-size:12px;color:var(--ink3)}
+.fd-sc{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;color:var(--ink2)}
+.fd-bar{height:4px;background:var(--bg2);border-radius:10px;overflow:hidden}
+.fd-fill{height:100%;border-radius:10px;transition:width 1.1s ease}
+.fd-reason{font-size:11px;color:var(--ink3);margin-top:3px;line-height:1.5}
+
+/* CLUSTERS */
+.cluster-item{display:flex;align-items:flex-start;gap:9px;padding:7px 11px;border-radius:7px;background:var(--bg);border:1px solid var(--border);margin-bottom:7px}
+.cluster-item:last-child{margin-bottom:0}
+.c-arrow{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);flex-shrink:0;margin-top:2px}
+.c-text{font-size:13px;color:var(--ink2)}
+.c-badge{margin-left:auto;flex-shrink:0;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+.c-high{background:var(--greenbg);color:var(--green);border:1px solid var(--greenb)}
+.c-med{background:var(--goldbg);color:var(--gold);border:1px solid var(--goldb)}
+
+/* TRIGGERS */
+.trigger-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:16px 20px;margin-bottom:22px;box-shadow:var(--shadow)}
+.trigger-item{padding:11px 0;border-bottom:1px solid var(--bg2)}
+.trigger-item:last-child{border-bottom:none}
+.t-sit{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.t-copy{font-size:13px;color:var(--ink2);line-height:1.65;font-style:italic}
+
+/* REWRITE */
+.rewrite-card{background:var(--ink);border-radius:15px;padding:24px 28px;margin-bottom:22px;box-shadow:var(--shadow-lg)}
+.rw-head{display:flex;align-items:center;gap:11px;margin-bottom:18px}
+.rw-icon{width:34px;height:34px;background:#e8a030;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.rw-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#f5f2ed;letter-spacing:-.01em}
+.rw-sub{font-size:12px;color:#666;margin-top:1px}
+.rw-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#666;margin-bottom:7px}
+.rw-box{font-family:'JetBrains Mono',monospace;font-size:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px 15px;color:#d0ccc4;line-height:1.7;margin-bottom:14px}
+.rw-bullet{padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:#bcc8b4;line-height:1.6;display:flex;gap:9px}
+.rw-bullet:last-child{border-bottom:none}
+.rb-dot{width:17px;height:17px;background:#e8a030;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px}
+.rw-rationale{font-size:13px;color:#888;line-height:1.75}
+.rw-rationale strong{color:#d0ccc4;font-weight:500}
+
+/* IMPACT STRIP */
+.impact-strip{background:var(--goldbg);border:1px solid var(--goldb);border-radius:13px;padding:18px 24px;margin-bottom:22px}
+.impact-eye{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.impact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.ig-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:3px}
+.ig-lbl{font-size:11px;color:var(--ink3);line-height:1.4}
+
+/* FAQ */
+.faq-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px 22px;margin-bottom:22px;box-shadow:var(--shadow)}
+.faq-item{padding:11px 0;border-bottom:1px solid var(--bg2)}
+.faq-item:last-child{border-bottom:none}
+.faq-q{font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:5px;display:flex;gap:7px;align-items:flex-start}
+.faq-qmark{width:17px;height:17px;background:var(--p1bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--p1);flex-shrink:0;margin-top:1px}
+.faq-a{font-size:13px;color:var(--ink3);line-height:1.65;padding-left:24px}
+
+.disclaimer{font-size:11px;color:var(--ink3);text-align:center;line-height:1.7;margin-top:24px}
+
+@media(max-width:768px){
+  .personas-grid,.detail-grid,.impact-grid{grid-template-columns:1fr}
+  .hero h1{font-size:26px}
+  .main{padding:22px 18px 60px}
+  .topbar{padding:0 18px}
+  .hero{padding:32px 18px 28px}
+  .hero-stats{flex-wrap:wrap;gap:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Seller<span>OS</span> <span style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:400;color:#555;margin-left:6px">Buyer Persona &amp; Intent Match Scorer</span></div>
+  <div class="demo-badge">Demo 03</div>
+</div>
+
+<div class="hero">
+  <div class="eyebrow">Most differentiated demo in the SellerOS suite</div>
+  <h1>Your listing is written<br>for the <em>wrong buyer.</em></h1>
+  <p>SellerOS identifies the 2–3 buyer archetypes driving purchases in your category, scores how well your current listing speaks to each, then rewrites it for the persona that converts most. No tool in the Indian market does this.</p>
+  <div class="hero-stats">
+    <div><div class="hs-val">68%</div><div class="hs-lbl">of purchases from<br>one dominant persona</div></div>
+    <div><div class="hs-val">60%</div><div class="hs-lbl">more likely to buy<br>via Rufus match</div></div>
+    <div><div class="hs-val">3×</div><div class="hs-lbl">CVR lift with<br>persona-targeted copy</div></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- INPUT -->
+  <div class="input-card">
+    <div class="section-eye">Product listing input</div>
+    <div class="grid2">
+      <div class="fg" style="margin-bottom:0">
+        <label>Product category</label>
+        <select id="inp-cat">
+          <option value="electronics_audio">Electronics — Wireless Earbuds / Headphones</option>
+          <option value="fashion_men">Fashion — Men's Casual T-shirts</option>
+          <option value="kitchen_cookware">Kitchen — Non-stick Cookware / Pans</option>
+          <option value="fitness_yoga">Sports & Fitness — Yoga Mats</option>
+          <option value="skincare">Beauty — Face Moisturisers / Serums</option>
+          <option value="custom">Other (describe in title)</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label>Platform</label>
+        <select id="inp-platform">
+          <option value="amazon">Amazon India</option>
+          <option value="flipkart">Flipkart</option>
+          <option value="myntra">Myntra</option>
+          <option value="meesho">Meesho</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg" style="margin-top:14px">
+      <label>Current product title</label>
+      <input type="text" id="inp-title" placeholder="e.g. boAt Rockerz 255 Pro+ Bluetooth Earphones with 60 Hours Playback, IPX5">
+      <div class="hint">Paste your live title exactly as it appears on the platform</div>
+    </div>
+    <div class="fg">
+      <label>Product description / bullet points</label>
+      <textarea id="inp-desc" placeholder="Paste your current product description or bullet points here. The more detail you give, the more accurate the persona analysis..."></textarea>
+      <div class="hint">Minimum 2–3 sentences for a meaningful analysis</div>
+    </div>
+    <div class="fg">
+      <label>Price point <span style="font-weight:400;color:var(--ink3)">(optional)</span></label>
+      <input type="text" id="inp-price" placeholder="e.g. ₹1,499 — helps calibrate persona income sensitivity">
+    </div>
+    <div class="err" id="err-msg"></div>
+    <button class="btn-run" id="run-btn" onclick="runAnalysis()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btn-txt">Analyse Buyer Personas →</span>
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="ld-label">SellerOS pipeline running</div>
+    <div class="pipeline">
+      <div class="pip-step"><div class="pip-dot active" id="ld1">1</div><div class="pip-lbl">Identifying category personas</div></div>
+      <div class="pip-conn"></div>
+      <div class="pip-step"><div class="pip-dot" id="ld2">2</div><div class="pip-lbl">Scoring listing fit</div></div>
+      <div class="pip-conn"></div>
+      <div class="pip-step"><div class="pip-dot" id="ld3">3</div><div class="pip-lbl">COSMO clustering</div></div>
+      <div class="pip-conn"></div>
+      <div class="pip-step"><div class="pip-dot" id="ld4">4</div><div class="pip-lbl">Rewriting for dominant buyer</div></div>
+    </div>
+    <div class="ld-status" id="ld-status">Identifying buyer archetypes for this category...</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="results-bar">
+      <div class="results-title">Persona Analysis Results</div>
+      <div class="live-tag">Analysis complete</div>
+    </div>
+
+    <!-- Personas -->
+    <div class="section-eye">Buyer personas identified in this category</div>
+    <div class="personas-grid" id="personas-grid"></div>
+
+    <!-- Dominant callout -->
+    <div class="dom-callout" id="dom-callout"></div>
+
+    <!-- Fit dimensions + Clusters -->
+    <div class="section-eye">Fit analysis — why your listing misses the mark</div>
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="dcard-head">
+          <div class="dcard-title">Listing fit by dimension</div>
+          <div class="dcard-score" id="overall-score">—</div>
+        </div>
+        <div class="dcard-body" id="fit-dims"></div>
+      </div>
+      <div class="detail-card">
+        <div class="dcard-head">
+          <div class="dcard-title">COSMO semantic clusters — missing connections</div>
+        </div>
+        <div class="dcard-body">
+          <div style="font-size:12px;color:var(--ink3);margin-bottom:11px;line-height:1.6">Concepts your dominant buyer searches for that your listing <strong style="color:var(--red)">doesn't connect to</strong>. Each missed cluster = invisible to COSMO intent matching.</div>
+          <div id="clusters"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contextual triggers -->
+    <div class="section-eye" style="margin-bottom:11px">Contextual triggers your listing should embed</div>
+    <div class="trigger-card">
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:13px;line-height:1.6">Real-life buying moments your dominant persona is in when they decide to purchase. COSMO surfaces products that match these contexts in session-aware recommendations.</div>
+      <div id="triggers"></div>
+    </div>
+
+    <!-- Rewrite -->
+    <div class="rewrite-card">
+      <div class="rw-head">
+        <div class="rw-icon">✦</div>
+        <div>
+          <div class="rw-title">SellerOS rewrite — targeted at dominant persona</div>
+          <div class="rw-sub">Persona-matched copy that Rufus can recommend and COSMO can index</div>
+        </div>
+      </div>
+      <div class="rw-lbl">Rewritten title</div>
+      <div class="rw-box" id="rw-title">—</div>
+      <div class="rw-lbl">Rewritten bullets</div>
+      <div id="rw-bullets" style="margin-bottom:15px"></div>
+      <div class="rw-lbl" style="color:#666">Why this works</div>
+      <div class="rw-rationale" id="rw-rationale">—</div>
+    </div>
+
+    <!-- Impact -->
+    <div class="impact-strip">
+      <div class="impact-eye">📈 Projected traction impact</div>
+      <div class="impact-grid">
+        <div><div class="ig-val" id="imp-cvr">—</div><div class="ig-lbl">CVR improvement<br>(Rufus recommendation lift)</div></div>
+        <div><div class="ig-val" id="imp-ctr">—</div><div class="ig-lbl">CTR improvement<br>(COSMO intent match)</div></div>
+        <div><div class="ig-val">60%</div><div class="ig-lbl">More likely to buy<br>when Rufus recommends</div></div>
+        <div><div class="ig-val" id="imp-gmv">—</div><div class="ig-lbl">Est. GMV uplift/month<br><small style="font-family:sans-serif;font-size:10px">(₹1,499 AOV, 300 visits/day)</small></div></div>
+      </div>
+    </div>
+
+    <!-- FAQs -->
+    <div class="section-eye" style="margin-bottom:11px">Rufus A+ FAQ pairs — written for your dominant persona</div>
+    <div class="faq-card">
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:13px;line-height:1.6">5 question-answer pairs phrased exactly as your dominant buyer would type to Amazon's Rufus assistant. Add these to your A+ Content for maximum recommendation rate.</div>
+      <div id="faqs"></div>
+    </div>
+
+    <div class="disclaimer">Scores and projections are AI estimates based on Amazon algorithm patterns as of 2025.<br>Track actual results via SP-API post-publish. Always review before publishing.</div>
+  </div>
+
+</div>
+
+<script>
+const PC = [
+  {main:'var(--p1)',cls:'dom-p1',fillCls:'pfb-p1'},
+  {main:'var(--p2)',cls:'dom-p2',fillCls:'pfb-p2'},
+  {main:'var(--p3)',cls:'dom-p3',fillCls:'pfb-p3'},
+];
+
+let ldTimer;
+
+async function runAnalysis() {
+  const title = document.getElementById('inp-title').value.trim();
+  const desc  = document.getElementById('inp-desc').value.trim();
+  const err   = document.getElementById('err-msg');
+
+  if (!title || desc.length < 20) {
+    err.textContent = 'Please enter a product title and at least a short description.';
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 3000);
+    return;
+  }
+  err.style.display = 'none';
+
+  const btn = document.getElementById('run-btn');
+  const spin = document.getElementById('spinner');
+  const btnTxt = document.getElementById('btn-txt');
+  btn.disabled = true; spin.style.display = 'block';
+  btnTxt.textContent = 'Analysing...';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  // Step animation
+  const steps = ['ld1','ld2','ld3','ld4'];
+  const msgs = [
+    'Identifying buyer archetypes for this category...',
+    'Scoring your listing fit against each persona...',
+    'Mapping COSMO semantic clusters...',
+    'Rewriting listing for the dominant persona...'
+  ];
+  let si = 0;
+  ldTimer = setInterval(() => {
+    if (si < steps.length - 1) {
+      const el = document.getElementById(steps[si]);
+      el.className = 'pip-dot done'; el.textContent = '✓';
+      si++;
+      document.getElementById(steps[si]).className = 'pip-dot active';
+      document.getElementById('ld-status').textContent = msgs[si];
+    }
+  }, 5500);
+
+  try {
+    const res = await fetch('/api/analyse', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        title,
+        description: desc,
+        category:  document.getElementById('inp-cat').value,
+        platform:  document.getElementById('inp-platform').value,
+        price:     document.getElementById('inp-price').value.trim(),
+      })
+    });
+
+    clearInterval(ldTimer);
+    steps.forEach(s => { const e = document.getElementById(s); e.className='pip-dot done'; e.textContent='✓'; });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    render(data);
+
+  } catch(e) {
+    clearInterval(ldTimer);
+    err.textContent = e.message || 'Something went wrong. Please try again.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; spin.style.display = 'none';
+    btnTxt.textContent = 'Re-run Analysis →';
+    document.getElementById('loading').style.display = 'none';
+    steps.forEach((s,i) => { const e=document.getElementById(s); e.className='pip-dot'; e.textContent=i+1; });
+  }
+}
+
+function render(r) {
+  const domId = r.dominant_persona_id || 'p1';
+  const personas = r.personas || [];
+
+  // ── Persona cards
+  const grid = document.getElementById('personas-grid');
+  grid.innerHTML = '';
+  personas.forEach((p, i) => {
+    const c = PC[i] || PC[0];
+    const isDom = p.id === domId;
+    const rank = isDom ? 'Dominant' : (i===1 ? 'Secondary' : 'Niche');
+    const rankStyle = isDom
+      ? `background:${c.main};color:#fff`
+      : `background:var(--bg2);color:var(--ink3);border:1px solid var(--border)`;
+    grid.innerHTML += `
+      <div class="pc ${c.cls} ${isDom ? 'dominant' : ''}">
+        <span class="rank-chip" style="${rankStyle}">${rank}</span>
+        <div class="pc-icon">${p.emoji||'👤'}</div>
+        <div class="pc-name">${p.name}</div>
+        <div class="pc-arch">${p.archetype}</div>
+        <div class="fit-bar-track"><div class="fit-bar-fill" style="width:0%" data-w="${p.fit_score}%"></div></div>
+        <div class="fit-row"><span>Listing fit</span><span class="fit-score-val">${p.fit_score}/100</span></div>
+        <div class="traffic-split"><span>Purchase share</span><strong>${p.traffic_share_pct}% of buyers</strong></div>
+      </div>`;
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.fit-bar-fill[data-w]').forEach(el => el.style.width = el.dataset.w);
+  }, 100);
+
+  // ── Dominant callout
+  const dom = personas.find(p=>p.id===domId) || personas[0] || {};
+  const dc = PC[personas.indexOf(dom)] || PC[0];
+  document.getElementById('dom-callout').innerHTML = `
+    <div class="dc-eye">⚠ Core insight — dominant buyer mismatch</div>
+    <div class="dc-hl">${dom.emoji||''} Your #1 buyer is <span style="color:${dc.main}">"${dom.name}"</span> — ${dom.traffic_share_pct}% of purchases</div>
+    <div class="dc-body">${r.dominant_persona_insight || `<strong>Job-to-be-done:</strong> ${dom.job_to_be_done}. <strong>Buying trigger:</strong> ${dom.buying_trigger}. Your current listing scores <strong style="color:var(--red)">${dom.fit_score}/100</strong> for this persona.`}</div>`;
+
+  // ── Overall score
+  const ofs = r.overall_fit_score || 0;
+  const ofsColor = ofs<40?'var(--red)':ofs<65?'var(--gold)':'var(--green)';
+  document.getElementById('overall-score').textContent = `${ofs}/100`;
+  document.getElementById('overall-score').style.color = ofsColor;
+
+  // ── Fit dimensions
+  const fdEl = document.getElementById('fit-dims');
+  fdEl.innerHTML = '';
+  const dimNames = {
+    language_match:'Language match', usecase_coverage:'Use-case coverage',
+    objection_handling:'Objection handling', persona_specificity:'Persona specificity',
+    intent_signals:'Intent signals'
+  };
+  Object.entries(r.fit_dimensions||{}).forEach(([k,v]) => {
+    const sc = v.score||0;
+    const fc = sc<40?'#b83030':sc<65?'#b8860b':'#1a7a3a';
+    fdEl.innerHTML += `
+      <div class="fd">
+        <div class="fd-top"><span class="fd-lbl">${dimNames[k]||k}</span><span class="fd-sc">${sc}/100</span></div>
+        <div class="fd-bar"><div class="fd-fill" style="background:${fc};width:0%" data-w="${sc}%"></div></div>
+        <div class="fd-reason">${v.reasoning||''}</div>
+      </div>`;
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.fd-fill[data-w]').forEach(el => el.style.width = el.dataset.w);
+  }, 150);
+
+  // ── Clusters
+  document.getElementById('clusters').innerHTML = (r.semantic_clusters||[]).map(c=>`
+    <div class="cluster-item">
+      <span class="c-arrow">→</span>
+      <span class="c-text"><strong>${c.product_concept}</strong> → ${c.related_concept}</span>
+      <span class="c-badge ${c.relevance==='high'?'c-high':'c-med'}">${c.relevance}</span>
+    </div>`).join('');
+
+  // ── Triggers
+  document.getElementById('triggers').innerHTML = (r.contextual_triggers||[]).map(t=>`
+    <div class="trigger-item">
+      <div class="t-sit">${t.situation}</div>
+      <div class="t-copy">"${t.embedded_copy}"</div>
+    </div>`).join('');
+
+  // ── Rewrite
+  document.getElementById('rw-title').textContent = r.rewritten_title||'—';
+  document.getElementById('rw-bullets').innerHTML = (r.rewritten_bullets||[]).map(b=>`
+    <div class="rw-bullet"><div class="rb-dot">✦</div><div>${b}</div></div>`).join('');
+  document.getElementById('rw-rationale').innerHTML = (r.rewrite_rationale||'')
+    .replace(/Rufus/g,'<strong>Rufus</strong>')
+    .replace(/COSMO/g,'<strong>COSMO</strong>')
+    .replace(/dominant persona/gi,'<strong>dominant persona</strong>');
+
+  // ── Impact
+  const cvr = r.projected_cvr_improvement||'11–17%';
+  const ctr = r.projected_ctr_improvement||'7–12%';
+  document.getElementById('imp-cvr').textContent = cvr;
+  document.getElementById('imp-ctr').textContent = ctr;
+  const cvrH = parseFloat((cvr.split('–')[1]||cvr).replace('%',''))/100;
+  const gmvLow  = Math.round(300*0.025*0.018*1499*30);
+  const gmvHigh = Math.round(300*0.03*0.018*(1+cvrH)*1499*30);
+  document.getElementById('imp-gmv').textContent = '₹'+gmvLow.toLocaleString('en-IN')+'–'+gmvHigh.toLocaleString('en-IN');
+
+  // ── FAQs
+  document.getElementById('faqs').innerHTML = (r.faq_pairs||[]).map(f=>`
+    <div class="faq-item">
+      <div class="faq-q"><div class="faq-qmark">Q</div>${f.question}</div>
+      <div class="faq-a">${f.answer}</div>
+    </div>`).join('');
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
