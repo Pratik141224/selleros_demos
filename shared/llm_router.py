@@ -36,7 +36,7 @@ class LLMResponse(TypedDict):
 _ROUTE: dict[str, dict[TaskType, str]] = {
     "openrouter": {
         TaskType.CREATIVE:   "qwen/qwen3-235b-a22b:free",
-        TaskType.STRUCTURED: "google/gemini-2.0-flash-exp:free",
+        TaskType.STRUCTURED: "meta-llama/llama-3.3-70b-instruct:free",
         TaskType.SCORING:    "meta-llama/llama-3.3-70b-instruct:free",
         TaskType.FALLBACK:   "mistralai/mistral-small-3.1-24b-instruct:free",
     },

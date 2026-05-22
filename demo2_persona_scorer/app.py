@@ -64,7 +64,7 @@ def analyse():
     except EnvironmentError as e:
         return jsonify({"error": str(e)}), 500
     except ValueError as e:
-        return jsonify({"error": f"AI response parsing failed: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
     except Exception as e:
         return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
