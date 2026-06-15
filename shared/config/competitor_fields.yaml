@@ -1,0 +1,7 @@
+# Mapping: CompetitorAnalysis competitor dict  →  fetch_competitor_summaries() return items
+# Change only the right-hand values if CompetitorAnalysis renames a field.
+
+asin:           asin
+title:          title
+bullets_source: bullet_points   # sliced to [:3] in code
+description:    description     # truncated to 300 chars in code

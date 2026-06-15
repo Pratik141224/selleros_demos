@@ -9,8 +9,8 @@ import json
 import re
 import time
 import logging
+from dataclasses import dataclass
 from enum import Enum
-from typing import TypedDict
 
 from dotenv import load_dotenv
 
@@ -26,7 +26,8 @@ class TaskType(str, Enum):
     FALLBACK   = "fallback"
 
 
-class LLMResponse(TypedDict):
+@dataclass
+class LLMResponse:
     content:  dict
     cost_usd: float
 
@@ -41,10 +42,10 @@ _ROUTE: dict[str, dict[TaskType, str]] = {
         TaskType.FALLBACK:   "mistralai/mistral-small-3.1-24b-instruct:free",
     },
     "anthropic": {
-        TaskType.CREATIVE:   "claude-sonnet-4-20250514",
-        TaskType.STRUCTURED: "claude-sonnet-4-20250514",
-        TaskType.SCORING:    "claude-sonnet-4-20250514",
-        TaskType.FALLBACK:   "claude-sonnet-4-20250514",
+        TaskType.CREATIVE:   "claude-sonnet-4-6",
+        TaskType.STRUCTURED: "claude-sonnet-4-6",
+        TaskType.SCORING:    "claude-sonnet-4-6",
+        TaskType.FALLBACK:   "claude-sonnet-4-6",
     },
     "openai": {
         TaskType.CREATIVE:   "gpt-4o-mini",
@@ -67,6 +68,38 @@ _COST_PER_MTok: dict[str, dict[str, float]] = {
     "openai":     {"in": 0.15, "out": 0.6},    # gpt-4o-mini approximate
     "groq":       {"in": 0.05, "out": 0.08},   # llama3.3 approximate
 }
+
+
+# ── Human voice rules — auto-injected into every system prompt ───────────────
+# See .claude/agents/human_voice.md for the full rationale and update instructions.
+
+_HUMAN_VOICE_SUFFIX = """
+VOICE AND STYLE — apply to every text field in your output:
+
+NEVER use these patterns:
+  Filler transitions : "In summary", "Overall", "To summarize", "It's worth noting",
+                       "Importantly", "Furthermore", "Moreover", "Additionally" as openers
+  Hedge language     : "It's important to note that", "Please keep in mind",
+                       "It should be noted", "Keep in mind that"
+  Intensifiers       : "incredibly", "extremely", "highly", "truly", "really", "very"
+                       before adjectives; "perfect", "amazing", "excellent" as standalone descriptors
+  Vague power-verbs  : "leverage" (→ use), "utilize" (→ use), "facilitate" (→ help),
+                       "enable" (→ let/allow), "delve into", "dive into", "unpack", "explore"
+                       as rhetorical openers
+  Structural tells   : **Bold label:** followed by explanation on the same bullet line;
+                       bullets ending with "and more!" or "!";
+                       em-dash (—) mid-sentence used purely for rhetorical pause;
+                       rhetorical questions mid-copy ("But what does this mean for you?");
+                       "Whether you're X or Y..." constructions;
+                       closing summary paragraphs that restate what was just said
+  AI markers         : "Certainly!", "Absolutely!", "Of course!", "Great question!";
+                       "As a large language model", "I was trained to"
+
+INSTEAD write like this:
+  Short, direct sentences — specific subject, active verb, no padding.
+  Numbers beat adjectives: "4mm sole" is stronger than "thin, comfortable, supportive sole".
+  Contractions are fine: "it won't" not "it does not".
+  Every word must earn its place. If removing it loses no meaning, remove it."""
 
 
 # ── JSON helpers ──────────────────────────────────────────────────────────────
@@ -206,6 +239,7 @@ def call(
     route  = _ROUTE[provider]
     caller = _PROVIDER_CALLERS[provider]
     model  = route[task_type]
+    system = f"{system}{_HUMAN_VOICE_SUFFIX}"
 
     logger.info("[llm_router] provider=%s task=%s model=%s", provider, task_type, model)
 

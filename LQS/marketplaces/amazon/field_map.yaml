@@ -1,0 +1,63 @@
+# marketplaces/amazon/field_map.yaml
+#
+# Zyte /extract/product schema → ListingInput field mapping.
+#
+# Edit ONLY this file when:
+#   • Zyte renames a response field
+#   • A new Zyte field becomes available that maps to a ListingInput field
+#   • The category_hierarchy format changes
+#
+# No Python code changes are needed for field renames.
+# The zyte_mapper.py module reads this config at startup and caches it.
+
+version: "1"
+
+# ── Direct mappings ────────────────────────────────────────────────────────────
+# Format: <ListingInput field>: <Zyte field name>
+# The Zyte field value is used as-is (no transformation).
+direct:
+  title:       product_name
+  description: product_description
+  brand:       brand
+  bullets:     key_features           # list[str] from Zyte
+  attributes:  technical_specifications   # dict from Zyte
+
+# ── Derived mappings ──────────────────────────────────────────────────────────
+# Fields that need a named transformation before assignment.
+# transform values must correspond to a function in zyte_mapper.py's _TRANSFORMS registry.
+derived:
+  browse_node:
+    source:    category_hierarchy
+    transform: category_hierarchy_to_browse_node
+    # Joins all category node names with " > "
+    # e.g. [{"name": "Electronics"}, {"name": "Headphones"}] → "Electronics > Headphones"
+
+  category:
+    source:    category_hierarchy
+    transform: leaf_category_name
+    # Returns the name of the last node in the hierarchy.
+    # e.g. "Headphones"
+
+  images:
+    source:    image_urls
+    transform: urls_to_image_dicts
+    # Wraps each URL string into {"url": ..., "alt_text": "", "role": "main"|"additional"}
+
+  review_summary:
+    transform: build_review_summary
+    # Composite from multiple Zyte fields — source names are declared below.
+    sources:
+      avg_rating:   rating
+      review_count: review_count
+    # top_negatives: not available from Zyte — will always be []
+
+# ── Unavailable fields ─────────────────────────────────────────────────────────
+# These fields are not present in the Zyte response.
+# The mapper will leave them at their ListingInput defaults (empty string / empty list).
+# Update this list if Zyte starts returning these fields in the future.
+unavailable:
+  - backend_keywords    # requires seller backend access
+  - aplus_content       # requires seller backend access
+  - qa_pairs            # not in Zyte product extract
+  - primary_keyword     # derived by A9 scorer from title/backend_keywords
+  - secondary_keywords  # same as above

@@ -1,0 +1,12 @@
+# Mapping: Zyte /extract/product  data.*  →  fetch_own_listing() return dict
+# Change only the right-hand values if the Zyte API renames a field.
+
+title:              product_name
+bullets_source:     key_features       # sliced to [:5] in code
+description:        product_description
+brand:              brand
+
+# Category hierarchy access
+category_hierarchy_key: category_hierarchy   # top-level key in data
+category_name_key:      name                 # key inside each hierarchy element
+category_link_key:      link                 # key inside each hierarchy element (node= extracted here)

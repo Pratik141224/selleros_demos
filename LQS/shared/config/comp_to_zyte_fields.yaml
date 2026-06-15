@@ -1,0 +1,11 @@
+# CompetitorAnalysis field  →  Zyte /extract/product field
+# Right side = field name expected by zyte_mapper.py + field_map.yaml
+# To rename a CompetitorAnalysis field, change the LEFT side only.
+# To rename a Zyte field, change the RIGHT side only.
+asin:          asin
+title:         product_name
+bullet_points: key_features
+description:   product_description
+brand:         brand
+rating:        rating
+review_count:  review_count

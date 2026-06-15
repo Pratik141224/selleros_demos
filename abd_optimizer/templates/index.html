@@ -134,17 +134,34 @@ textarea{min-height:52px;line-height:1.6}
 .hy-icon{width:33px;height:33px;background:var(--amber);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .hy-title{font-family:'DM Serif Display',serif;font-size:17px;color:#faf8f4;letter-spacing:-.01em}
 .hy-sub{font-size:12px;color:#666;margin-top:1px}
-.hy-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#666;margin-bottom:6px}
-.hy-box{font-family:'DM Mono',monospace;font-size:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:11px 14px;color:#c8d4c0;line-height:1.7;margin-bottom:13px}
-.hy-rat{font-size:13px;color:#888;line-height:1.75}
+.hy-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#666;margin-bottom:6px;margin-top:14px}
+.hy-lbl:first-of-type{margin-top:0}
+.hy-box{font-family:'DM Mono',monospace;font-size:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:11px 14px;color:#c8d4c0;line-height:1.7;margin-bottom:4px}
+.hy-desc{font-size:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:11px 14px;color:#9aada0;line-height:1.75;max-height:180px;overflow-y:auto}
+.hy-desc b{color:#c8d4c0;font-weight:500}
+.hy-bullet{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;line-height:1.55;color:#aab8b0}
+.hy-bullet:last-child{border-bottom:none}
+.hy-bmark{width:19px;height:19px;border-radius:50%;background:rgba(201,124,26,.2);border:1px solid rgba(201,124,26,.3);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;margin-top:1px}
+.hy-rat{font-size:13px;color:#777;line-height:1.75;margin-top:4px}
 .hy-rat strong{color:#c8d4c0;font-weight:500}
 
 /* Impact */
 .impact{background:var(--amberbg);border:1px solid var(--amberb);border-radius:13px;padding:18px 22px;margin-bottom:22px}
 .imp-eye{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--amber);margin-bottom:13px;display:flex;align-items:center;gap:7px}
-.imp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.imp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}
 .ig-val{font-family:'DM Serif Display',serif;font-size:26px;color:var(--amber);line-height:1;margin-bottom:3px}
 .ig-lbl{font-size:11px;color:var(--ink3);line-height:1.4}
+.imp-divider{height:1px;background:var(--amberb);margin-bottom:16px}
+.imp-breakdown-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--amber);margin-bottom:12px}
+.imp-row{background:#fff;border:1px solid var(--amberb);border-radius:10px;padding:13px 16px;margin-bottom:9px}
+.imp-row:last-child{margin-bottom:0}
+.imp-row-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:10px}
+.imp-comp{font-size:13px;font-weight:500;color:var(--ink)}
+.imp-badges{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.imp-metric{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;background:var(--bg2);color:var(--ink3);border:1px solid var(--border)}
+.imp-lift{font-family:'DM Serif Display',serif;font-size:17px;color:var(--amber)}
+.imp-changed{font-size:12px;color:var(--ink2);margin-bottom:5px;font-style:italic}
+.imp-reason{font-size:12px;color:var(--ink3);line-height:1.65}
 
 /* Mode tabs */
 .mode-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:20px;width:fit-content}
@@ -382,12 +399,16 @@ textarea{min-height:52px;line-height:1.6}
         <div class="hy-icon">✦</div>
         <div>
           <div class="hy-title">SellerOS Hybrid Recommendation</div>
-          <div class="hy-sub">Maximizes both discovery and conversion — the recommended title to publish</div>
+          <div class="hy-sub">Full listing — title, bullets, and description — optimized for discovery and conversion</div>
         </div>
       </div>
       <div class="hy-lbl">Recommended title</div>
       <div class="hy-box" id="hybrid-title">—</div>
-      <div class="hy-lbl" style="color:#666">Why this works</div>
+      <div class="hy-lbl">Recommended bullets</div>
+      <div id="hybrid-bullets"></div>
+      <div class="hy-lbl">Recommended description</div>
+      <div class="hy-desc" id="hybrid-desc">—</div>
+      <div class="hy-lbl" style="color:#555">Why this works</div>
       <div class="hy-rat" id="hybrid-rat">—</div>
     </div>
 
@@ -399,6 +420,9 @@ textarea{min-height:52px;line-height:1.6}
         <div><div class="ig-val" id="imp-cvr">—</div><div class="ig-lbl">Estimated CVR improvement</div></div>
         <div><div class="ig-val" id="imp-gmv">—</div><div class="ig-lbl">Est. GMV uplift/month<br><small style="font-family:sans-serif;font-size:10px">(₹1,850 AOV, 500 visits/day)</small></div></div>
       </div>
+      <div class="imp-divider"></div>
+      <div class="imp-breakdown-lbl">Impact breakdown by component</div>
+      <div id="imp-breakdown"></div>
     </div>
 
     <div class="disclaimer">Scores and projections are AI estimates based on Amazon algorithm best practices as of 2025.<br>Actual results depend on category competition, pricing, and reviews. Always verify before publishing.</div>
@@ -612,13 +636,25 @@ function render(r) {
 
   // Hybrid
   set('hybrid-title', hyb.title||'—');
+
+  document.getElementById('hybrid-bullets').innerHTML = (hyb.bullets||[]).map((b,i)=>
+    `<div class="hy-bullet"><div class="hy-bmark">${i+1}</div><div>${b}</div></div>`
+  ).join('');
+
+  const hybDescEl = document.getElementById('hybrid-desc');
+  if (hyb.description) {
+    hybDescEl.innerHTML = hyb.description;
+  } else {
+    hybDescEl.textContent = '—';
+  }
+
   document.getElementById('hybrid-rat').innerHTML = (hyb.rationale||'')
     .replace(/Variant A/g,'<strong>Variant A</strong>')
     .replace(/Variant B/g,'<strong>Variant B</strong>')
     .replace(/A9/g,'<strong>A9</strong>')
     .replace(/Rufus/g,'<strong>Rufus</strong>');
 
-  // Impact
+  // Impact — top metrics
   const ctr = imp.ctr_improvement||'9–14%';
   const cvr = imp.cvr_improvement||'7–12%';
   set('imp-ctr', ctr); set('imp-cvr', cvr);
@@ -626,6 +662,23 @@ function render(r) {
   const gmvLow  = Math.round(500*0.03*0.02*1850*30);
   const gmvHigh = Math.round(500*0.035*0.025*(1+ctrH)*1850*30);
   set('imp-gmv', '₹'+gmvLow.toLocaleString('en-IN')+'–'+gmvHigh.toLocaleString('en-IN'));
+
+  // Impact — breakdown by component
+  const breakdown = imp.breakdown || [];
+  const metricColors = { CTR:'var(--amber)', CVR:'var(--teal)', Indexing:'#7a5af8' };
+  document.getElementById('imp-breakdown').innerHTML = breakdown.map(row => `
+    <div class="imp-row">
+      <div class="imp-row-top">
+        <div class="imp-comp">${row.component}</div>
+        <div class="imp-badges">
+          <span class="imp-metric">${row.metric}</span>
+          <span class="imp-lift">${row.expected_lift}</span>
+        </div>
+      </div>
+      <div class="imp-changed">${row.what_changed}</div>
+      <div class="imp-reason">${row.reasoning}</div>
+    </div>
+  `).join('');
 
   document.getElementById('results').style.display = 'block';
   document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});

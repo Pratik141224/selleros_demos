@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SellerOS — Keyword Gap Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#faf8f4; --bg2:#f2efe8; --bg3:#e8e4da;
+  --card:#fff; --ink:#0f0e0c; --ink2:#3d3b36; --ink3:#7a7870;
+  --border:#dedad2; --border2:#ccc8c0;
+  --amber:#c97c1a; --amberbg:#fef7ec; --amberb:#f5d99a;
+  --teal:#0e7a6c; --tealbg:#edf7f5; --tealb:#8fd4cc;
+  --red:#c0392b; --redbg:#fdf1f0; --redb:#f5b8b3;
+  --green:#1a7a3a; --greenbg:#eaf6ee; --greenb:#9dd9b0;
+  --purple:#5c34b5; --purplebg:#f3f0fb; --purpleb:#c4b5f4;
+  --shadow:0 1px 3px rgba(15,14,12,.08),0 4px 16px rgba(15,14,12,.04);
+  --shadow-lg:0 4px 24px rgba(15,14,12,.12),0 1px 4px rgba(15,14,12,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.65}
+
+.header{background:var(--ink);padding:18px 40px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #222}
+.brand{display:flex;align-items:center;gap:11px}
+.logo-sq{width:30px;height:30px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:16px;color:#fff}
+.brand-name{font-family:'DM Serif Display',serif;font-size:19px;color:#faf8f4;letter-spacing:-.02em}
+.brand-sub{font-size:11px;color:#888;letter-spacing:.05em;text-transform:uppercase;margin-top:1px}
+.demo-tag{font-size:11px;color:#666;border:1px solid #333;padding:3px 10px;border-radius:20px}
+
+.main{max-width:1140px;margin:0 auto;padding:38px 40px 80px}
+
+.intro{margin-bottom:34px}
+.intro h1{font-family:'DM Serif Display',serif;font-size:34px;letter-spacing:-.02em;line-height:1.15;color:var(--ink);margin-bottom:9px}
+.intro h1 em{color:var(--amber);font-style:italic}
+.intro p{font-size:14px;color:var(--ink3);max-width:560px;line-height:1.75}
+
+.input-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 30px;margin-bottom:24px;box-shadow:var(--shadow)}
+.sec-eye{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.sec-eye::before{content:'';width:5px;height:5px;background:var(--amber);border-radius:50%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.fg{margin-bottom:14px}
+.fg:last-child{margin-bottom:0}
+label{display:block;font-size:13px;font-weight:500;color:var(--ink2);margin-bottom:5px}
+.hint{font-size:11px;color:var(--ink3);margin-top:3px}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(201,124,26,.12);background:#fff}
+textarea{min-height:52px;line-height:1.6}
+.bullets-list{display:flex;flex-direction:column;gap:7px}
+.bi{display:flex;align-items:flex-start;gap:8px}
+.bnum{width:22px;height:22px;background:var(--bg2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--ink3);flex-shrink:0;margin-top:8px}
+.btn-run{width:100%;padding:13px 24px;background:var(--ink);color:#faf8f4;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:background .15s;margin-top:6px;letter-spacing:-.01em}
+.btn-run:hover{background:#1f1e1a}
+.btn-run:disabled{background:var(--bg3);color:var(--ink3);cursor:not-allowed}
+.spin{width:15px;height:15px;border:2px solid rgba(250,248,244,.3);border-top-color:#faf8f4;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:10px 14px;color:var(--red);font-size:13px;margin-bottom:10px;display:none}
+
+.mode-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:20px;width:fit-content}
+.mode-tab{padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--ink3);font-family:'DM Sans',sans-serif;transition:all .15s;letter-spacing:-.01em}
+.mode-tab.active{background:var(--ink);color:#faf8f4}
+.mode-tab:not(.active):hover{background:var(--bg2)}
+
+.asin-row{display:flex;gap:9px;align-items:flex-start;margin-bottom:14px}
+.asin-row input{flex:1}
+.btn-fetch{padding:9px 18px;background:var(--amber);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:background .15s;flex-shrink:0}
+.btn-fetch:hover{background:#b56d13}
+.btn-fetch:disabled{background:var(--bg3);color:var(--ink3);cursor:not-allowed}
+.spin-sm{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.fetch-err{background:var(--redbg);border:1px solid var(--redb);border-radius:7px;padding:8px 12px;color:var(--red);font-size:13px;margin-bottom:10px;display:none}
+.fetched-banner{background:var(--greenbg);border:1px solid var(--greenb);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:none}
+.fb-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.fb-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--green)}
+.fb-asin{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink3)}
+.fb-cat{font-size:12px;color:var(--ink2);margin-bottom:8px}
+.comp-chips{display:flex;flex-wrap:wrap;gap:5px}
+.comp-chip{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:#fff;border:1px solid var(--greenb);color:var(--ink2);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.loading{display:none;padding:52px 0;text-align:center}
+.ld-lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:20px}
+.pipeline{display:flex;align-items:center;justify-content:center;max-width:480px;margin:0 auto 24px}
+.ps{text-align:center;flex:1}
+.pd{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-size:11px;color:var(--ink3);transition:all .4s}
+.pd.active{background:var(--ink);border-color:var(--ink);color:#faf8f4;animation:pd 1s infinite}
+.pd.done{background:var(--teal);border-color:var(--teal);color:#fff;animation:none}
+@keyframes pd{0%,100%{box-shadow:0 0 0 0 rgba(15,14,12,.3)}50%{box-shadow:0 0 0 5px rgba(15,14,12,0)}}
+.pc-conn{width:36px;height:1px;background:var(--border);flex-shrink:0;margin-top:-21px}
+.pl{font-size:11px;color:var(--ink3);line-height:1.4;max-width:90px;margin:0 auto}
+.ld-status{font-size:13px;color:var(--ink3);font-style:italic}
+
+#results{display:none}
+.rbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.rtitle{font-family:'DM Serif Display',serif;font-size:22px;letter-spacing:-.02em}
+.ai-tag{font-size:11px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;padding:3px 11px;border-radius:20px;background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+
+/* Top metrics strip */
+.gap-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:24px}
+.gs{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow);text-align:center}
+.gs-val{font-family:'DM Serif Display',serif;font-size:40px;line-height:1;margin-bottom:4px}
+.gs-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
+.gs-sub{font-size:12px;color:var(--ink3);margin-top:3px}
+.gap-bad{color:var(--red)} .gap-mid{color:var(--amber)} .gap-good{color:var(--teal)}
+
+/* Rewritten title snippet */
+.snippet-card{background:var(--amberbg);border:1px solid var(--amberb);border-radius:13px;padding:18px 22px;margin-bottom:22px}
+.snip-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--amber);margin-bottom:8px}
+.snip-title{font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);line-height:1.6;padding:10px 13px;background:#fff;border:1px solid var(--amberb);border-radius:8px;margin-bottom:6px}
+.snip-hint{font-size:12px;color:var(--ink3)}
+
+/* Keyword gap tables */
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:20px 24px;margin-bottom:18px;box-shadow:var(--shadow)}
+.sc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sc-title{font-size:14px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:8px}
+.badge-count{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px}
+.bc-red{background:var(--redbg);color:var(--red);border:1px solid var(--redb)}
+.bc-amber{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb)}
+.bc-teal{background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+.bc-purple{background:var(--purplebg);color:var(--purple);border:1px solid var(--purpleb)}
+
+.kw-table{width:100%;border-collapse:collapse}
+.kw-table th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:0 10px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.kw-table td{padding:10px;border-bottom:1px solid var(--bg2);font-size:13px;color:var(--ink2);vertical-align:middle}
+.kw-table tr:last-child td{border-bottom:none}
+.kw-table tr:hover td{background:var(--bg2)}
+.kw-word{font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);font-weight:500}
+.vol-est{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink3)}
+.opp-bar{display:flex;align-items:center;gap:7px}
+.opp-track{width:60px;height:5px;background:var(--bg3);border-radius:10px;overflow:hidden}
+.opp-fill{height:100%;border-radius:10px}
+.opp-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3)}
+.tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;display:inline-block}
+.tag-front{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb)}
+.tag-back{background:var(--purplebg);color:var(--purple);border:1px solid var(--purpleb)}
+.tag-both{background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb)}
+.tag-disc{background:var(--bg2);color:var(--ink3);border:1px solid var(--border)}
+.place-tag{font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3);background:var(--bg2);padding:2px 7px;border-radius:5px;border:1px solid var(--border)}
+
+/* Backend audit */
+.audit-card{background:var(--ink);border-radius:14px;padding:22px 26px;margin-bottom:22px;box-shadow:var(--shadow-lg)}
+.au-head{display:flex;align-items:center;gap:11px;margin-bottom:18px}
+.au-icon{width:33px;height:33px;background:var(--amber);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.au-title{font-family:'DM Serif Display',serif;font-size:17px;color:#faf8f4;letter-spacing:-.01em}
+.au-sub{font-size:12px;color:#666;margin-top:1px}
+.au-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+.au-stat{text-align:center}
+.au-num{font-family:'DM Serif Display',serif;font-size:28px;line-height:1;margin-bottom:3px}
+.au-num.ok{color:#9dd9b0} .au-num.warn{color:var(--amberb)} .au-num.bad{color:#f5b8b3}
+.au-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#555}
+
+.byte-bar-wrap{margin-bottom:18px}
+.byte-bar-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#555;margin-bottom:8px;display:flex;justify-content:space-between}
+.byte-bar{height:10px;background:rgba(255,255,255,.1);border-radius:10px;overflow:hidden}
+.byte-fill{height:100%;border-radius:10px;transition:width 1s ease}
+.fill-ok{background:#9dd9b0} .fill-warn{background:var(--amberb)} .fill-bad{background:#f5b8b3}
+
+.gen-lbl{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#666;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.gen-string{font-family:'DM Mono',monospace;font-size:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:13px 15px;color:#c8d4c0;line-height:1.7;word-break:break-all;margin-bottom:8px}
+.btn-copy{padding:6px 14px;background:var(--amber);color:#fff;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-copy:hover{background:#b56d13}
+.byte-hint{font-size:11px;color:#555}
+
+.issue-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.issue-chip{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:rgba(192,57,43,.2);color:#f5b8b3;border:1px solid rgba(192,57,43,.3)}
+
+/* Keyword sets accordion */
+.kw-sets{background:var(--card);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow)}
+.kws-head{padding:16px 22px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);user-select:none}
+.kws-head:hover{background:var(--bg2)}
+.kws-title{font-size:14px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:8px}
+.kws-arrow{font-size:13px;color:var(--ink3);transition:transform .2s}
+.kws-arrow.open{transform:rotate(180deg)}
+.kws-body{display:none;padding:18px 22px}
+.kws-body.open{display:block}
+.ks-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.ks-cat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px 15px}
+.ks-name{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.ks-chips{display:flex;flex-wrap:wrap;gap:5px}
+.ksc{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:var(--card);border:1px solid var(--border);color:var(--ink2)}
+.ksc-seasonal{background:var(--amberbg);border-color:var(--amberb);color:var(--amber)}
+.ksc-ppc{background:var(--purplebg);border-color:var(--purpleb);color:var(--purple)}
+.ksc-locale{background:var(--tealbg);border-color:var(--tealb);color:var(--teal)}
+
+/* Byte plan */
+.plan-rows{margin-top:14px}
+.plan-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bg2);font-size:13px}
+.plan-row:last-child{border-bottom:none}
+.plan-p{width:20px;height:20px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--ink3);flex-shrink:0}
+.plan-name{flex:1;color:var(--ink2)}
+.plan-bytes{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink3)}
+
+.content-gaps-list{list-style:none;display:flex;flex-direction:column;gap:7px}
+.cg-item{display:flex;gap:10px;font-size:13px;color:var(--ink2);line-height:1.55}
+.cg-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:6px}
+
+.disclaimer{font-size:11px;color:var(--ink3);text-align:center;line-height:1.7;margin-top:24px}
+
+@media(max-width:768px){
+  .main{padding:22px 18px 60px}
+  .header{padding:14px 18px}
+  .gap-strip,.au-grid,.ks-grid{grid-template-columns:1fr}
+  .intro h1{font-size:24px}
+  .kw-table th:nth-child(3),.kw-table td:nth-child(3){display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="brand">
+      <div class="logo-sq">S</div>
+      <span class="brand-name">SellerOS</span>
+    </div>
+    <div class="brand-sub">Keyword Gap Analyzer</div>
+  </div>
+  <div class="demo-tag">Demo 02</div>
+</div>
+
+<div class="main">
+
+  <div class="intro">
+    <h1>Find the <em>keywords</em><br>your listing is missing.</h1>
+    <p>Paste your ASIN and SellerOS fetches your listing, pulls the top-5 category competitors, identifies every keyword gap in your front-end and backend, then generates a ready-to-paste ≤249-byte backend string across all 8 keyword categories.</p>
+  </div>
+
+  <div class="input-card">
+    <div class="sec-eye">Product listing input</div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-asin" onclick="switchMode('asin')">ASIN Lookup</button>
+      <button class="mode-tab" id="tab-manual" onclick="switchMode('manual')">Manual Entry</button>
+    </div>
+
+    <div id="asin-section">
+      <div class="fg" style="margin-bottom:8px">
+        <label>Amazon ASIN or product URL</label>
+        <div class="asin-row">
+          <input type="text" id="inp-asin" placeholder="e.g. B0DDPRNT22 or https://www.amazon.in/dp/B0DDPRNT22">
+          <button class="btn-fetch" id="fetch-btn" onclick="fetchListing()">
+            <div class="spin-sm" id="fetch-spin"></div>
+            <span id="fetch-txt">Fetch Listing</span>
+          </button>
+        </div>
+        <div class="hint">Works with amazon.in · amazon.com · Bare ASIN (10 chars)</div>
+      </div>
+      <div class="fetch-err" id="fetch-err"></div>
+      <div class="fetched-banner" id="fetched-banner">
+        <div class="fb-row">
+          <span class="fb-label">Listing fetched</span>
+          <span class="fb-asin" id="fb-asin"></span>
+        </div>
+        <div class="fb-cat" id="fb-cat"></div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--green);margin-bottom:5px">Top competitors pulled</div>
+        <div class="comp-chips" id="comp-chips"></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="fg" style="margin-bottom:0">
+        <label>Product category</label>
+        <select id="inp-cat">
+          <option value="electronics">Electronics — Earphones / Headphones</option>
+          <option value="fashion">Fashion — Men's T-shirts</option>
+          <option value="kitchen">Kitchen — Cookware / Pans</option>
+          <option value="fitness">Sports — Yoga Mats</option>
+          <option value="skincare">Beauty — Moisturisers</option>
+          <option value="custom">Other</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label>Target locale</label>
+        <select id="inp-locale">
+          <option value="IN">India (IN) — includes Hindi transliterations</option>
+          <option value="US">United States (US)</option>
+          <option value="AE">UAE (AE)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-top:14px">
+      <label>Current product title</label>
+      <input type="text" id="inp-title" placeholder="e.g. boAt Rockerz 450 Bluetooth Headphone with 15 Hours Playback, 40mm Drivers">
+      <div class="hint">Paste your live title exactly as it appears on Amazon</div>
+    </div>
+
+    <div class="fg">
+      <label>Current bullet points</label>
+      <div class="bullets-list">
+        <div class="bi"><div class="bnum">1</div><textarea id="b1" placeholder="Bullet 1..."></textarea></div>
+        <div class="bi"><div class="bnum">2</div><textarea id="b2" placeholder="Bullet 2..."></textarea></div>
+        <div class="bi"><div class="bnum">3</div><textarea id="b3" placeholder="Bullet 3..."></textarea></div>
+        <div class="bi"><div class="bnum">4</div><textarea id="b4" placeholder="Bullet 4..."></textarea></div>
+        <div class="bi"><div class="bnum">5</div><textarea id="b5" placeholder="Bullet 5 (optional)..."></textarea></div>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label>Current product description <span style="font-weight:400;color:var(--ink3)">(optional)</span></label>
+      <textarea id="inp-desc" style="min-height:72px" placeholder="Paste your existing description or A+ content..."></textarea>
+    </div>
+
+    <div class="fg">
+      <label>Current backend search terms <span style="font-weight:400;color:var(--ink3)">(optional — paste existing backend string for audit)</span></label>
+      <textarea id="inp-backend" style="min-height:52px" placeholder="e.g. earbuds wireless noise cancelling gym workout running..."></textarea>
+      <div class="hint">Paste exactly as stored in Amazon Seller Central. Max 249 bytes.</div>
+    </div>
+
+    <div class="fg">
+      <label>Converting PPC search terms <span style="font-weight:400;color:var(--ink3)">(optional — one per line, from Search Term Report)</span></label>
+      <textarea id="inp-ppc" style="min-height:52px" placeholder="earphones under 500&#10;best wireless headphones for gym&#10;noise cancelling earbuds india"></textarea>
+      <div class="hint">Terms from your ad reports that convert but aren't in your organic content yet</div>
+    </div>
+
+    <div class="err" id="err-msg"></div>
+    <button class="btn-run" id="run-btn" onclick="runAnalysis()">
+      <div class="spin" id="spinner"></div>
+      <span id="btn-txt">Analyze Keyword Gap →</span>
+    </button>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="ld-lbl">SellerOS pipeline running</div>
+    <div class="pipeline">
+      <div class="ps"><div class="pd active" id="ld1">1</div><div class="pl">Keyword extraction &amp; backend audit</div></div>
+      <div class="pc-conn"></div>
+      <div class="ps"><div class="pd" id="ld2">2</div><div class="pl">Gap analysis &amp; backend generation</div></div>
+    </div>
+    <div class="ld-status" id="ld-status">Extracting keywords and auditing backend string...</div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="rbar">
+      <div class="rtitle">Keyword Gap Report</div>
+      <div class="ai-tag">AI-generated · Review before publishing</div>
+    </div>
+
+    <!-- Top metrics strip -->
+    <div class="gap-strip">
+      <div class="gs">
+        <div class="gs-val" id="gap-score">—</div>
+        <div class="gs-lbl">Indexation gap score</div>
+        <div class="gs-sub">0 = complete gaps · 100 = full coverage</div>
+      </div>
+      <div class="gs">
+        <div class="gs-val gap-bad" id="crit-count">—</div>
+        <div class="gs-lbl">Critical keyword gaps</div>
+        <div class="gs-sub">High-volume, high-intent misses</div>
+      </div>
+      <div class="gs">
+        <div class="gs-val" id="traffic-missed" style="font-size:18px;padding-top:10px">—</div>
+        <div class="gs-lbl">Estimated traffic missed</div>
+        <div class="gs-sub">Monthly organic clicks not reaching you</div>
+      </div>
+    </div>
+
+    <!-- Rewritten title snippet -->
+    <div class="snippet-card" id="snip-wrap" style="display:none">
+      <div class="snip-lbl">Suggested title with top-3 missing keywords embedded</div>
+      <div class="snip-title" id="snip-title">—</div>
+      <div class="snip-hint">Primary missing keyword moved into first 5 words · ≤200 chars · Review before publishing</div>
+    </div>
+
+    <!-- Missing critical keywords -->
+    <div class="section-card">
+      <div class="sc-head">
+        <div class="sc-title">
+          Missing critical keywords
+          <span class="badge-count bc-red" id="crit-badge">0</span>
+        </div>
+        <span style="font-size:12px;color:var(--ink3)">High-volume · High-intent · Competitors have them</span>
+      </div>
+      <div id="crit-table-wrap">
+        <table class="kw-table">
+          <thead>
+            <tr>
+              <th>Keyword</th>
+              <th>Est. volume/mo</th>
+              <th>Opportunity</th>
+              <th>Gap type</th>
+              <th>Add to</th>
+              <th>Intent</th>
+            </tr>
+          </thead>
+          <tbody id="crit-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Missing secondary keywords -->
+    <div class="section-card">
+      <div class="sc-head">
+        <div class="sc-title">
+          Missing secondary keywords
+          <span class="badge-count bc-amber" id="sec-badge">0</span>
+        </div>
+        <span style="font-size:12px;color:var(--ink3)">Lower volume · Supporting terms · Backend-first</span>
+      </div>
+      <table class="kw-table">
+        <thead>
+          <tr>
+            <th>Keyword</th>
+            <th>Est. volume/mo</th>
+            <th>Opportunity</th>
+            <th>Gap type</th>
+            <th>Add to</th>
+            <th>Intent</th>
+          </tr>
+        </thead>
+        <tbody id="sec-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Content gaps -->
+    <div class="section-card" id="content-gaps-card" style="display:none">
+      <div class="sc-head">
+        <div class="sc-title">
+          Structural content gaps
+          <span class="badge-count bc-amber" id="gaps-badge">0</span>
+        </div>
+      </div>
+      <ul class="content-gaps-list" id="content-gaps-list"></ul>
+    </div>
+
+    <!-- Backend audit + generated string -->
+    <div class="audit-card">
+      <div class="au-head">
+        <div class="au-icon">⚙</div>
+        <div>
+          <div class="au-title">Backend Keyword Audit &amp; Generator</div>
+          <div class="au-sub">Deterministic audit · AI-generated optimised string</div>
+        </div>
+      </div>
+
+      <div class="au-grid">
+        <div class="au-stat">
+          <div class="au-num" id="au-used">—</div>
+          <div class="au-lbl">Bytes used</div>
+        </div>
+        <div class="au-stat">
+          <div class="au-num" id="au-avail">—</div>
+          <div class="au-lbl">Bytes available</div>
+        </div>
+        <div class="au-stat">
+          <div class="au-num" id="au-dupes">—</div>
+          <div class="au-lbl">Wasted duplicates</div>
+        </div>
+      </div>
+
+      <div class="byte-bar-wrap">
+        <div class="byte-bar-lbl">
+          <span>Current backend byte utilisation</span>
+          <span id="au-pct">—</span>
+        </div>
+        <div class="byte-bar"><div class="byte-fill" id="byte-fill-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="issue-chips" id="au-issues"></div>
+
+      <div style="margin-top:18px">
+        <div class="gen-lbl">
+          <span>Generated backend string (ready to paste)</span>
+          <button class="btn-copy" onclick="copyBackend()">Copy</button>
+        </div>
+        <div class="gen-string" id="gen-backend">—</div>
+        <div class="byte-hint" id="gen-bytes">— / 249 bytes</div>
+      </div>
+    </div>
+
+    <!-- Keyword sets by category -->
+    <div class="kw-sets">
+      <div class="kws-head" onclick="toggleSets(this)">
+        <div class="kws-title">
+          Backend keyword sets by category
+          <span class="badge-count bc-teal" id="sets-badge">8 categories</span>
+        </div>
+        <div class="kws-arrow" id="sets-arrow">▾</div>
+      </div>
+      <div class="kws-body" id="sets-body">
+        <div class="ks-grid" id="sets-grid"></div>
+      </div>
+    </div>
+
+    <!-- Byte plan -->
+    <div class="section-card" id="plan-card" style="display:none">
+      <div class="sc-head">
+        <div class="sc-title">Backend byte allocation plan</div>
+        <span style="font-size:12px;color:var(--ink3)">Priority fill order · 249 byte budget</span>
+      </div>
+      <div class="plan-rows" id="plan-rows"></div>
+    </div>
+
+    <div class="disclaimer">
+      Volume estimates are approximate and based on competitor keyword analysis as of the run date.<br>
+      Backend string must be reviewed for compliance before saving in Seller Central. Actual indexation depends on Amazon's algorithm.
+    </div>
+
+  </div><!-- /#results -->
+
+</div><!-- /.main -->
+
+<script>
+let _competitorContext = null;
+let _generatedBackend  = '';
+let ldTimer;
+
+// ── MODE SWITCH ───────────────────────────────
+function switchMode(mode) {
+  const isAsin = mode === 'asin';
+  document.getElementById('tab-asin').className   = 'mode-tab' + (isAsin ? ' active' : '');
+  document.getElementById('tab-manual').className = 'mode-tab' + (!isAsin ? ' active' : '');
+  document.getElementById('asin-section').style.display = isAsin ? 'block' : 'none';
+  if (!isAsin) {
+    _competitorContext = null;
+    document.getElementById('fetched-banner').style.display = 'none';
+  }
+}
+
+// ── ASIN FETCH ────────────────────────────────
+async function fetchListing() {
+  const asinInput = document.getElementById('inp-asin').value.trim();
+  const fetchErr  = document.getElementById('fetch-err');
+  fetchErr.style.display = 'none';
+
+  if (!asinInput) {
+    fetchErr.textContent = 'Enter an ASIN or Amazon product URL.';
+    fetchErr.style.display = 'block';
+    return;
+  }
+
+  const btn  = document.getElementById('fetch-btn');
+  const spin = document.getElementById('fetch-spin');
+  const txt  = document.getElementById('fetch-txt');
+  btn.disabled = true; spin.style.display = 'block'; txt.textContent = 'Fetching…';
+  document.getElementById('fetched-banner').style.display = 'none';
+
+  try {
+    const res  = await fetch('/api/fetch-listing', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({asin: asinInput})
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    document.getElementById('inp-title').value = data.title || '';
+    ['b1','b2','b3','b4','b5'].forEach((id, i) => {
+      document.getElementById(id).value = (data.bullets || [])[i] || '';
+    });
+    document.getElementById('inp-desc').value = data.description || '';
+
+    _competitorContext = data.competitors || [];
+
+    document.getElementById('fb-asin').textContent = data.asin;
+    document.getElementById('fb-cat').textContent  = 'Category: ' + (data.leaf_category_name || '—');
+    document.getElementById('comp-chips').innerHTML = (_competitorContext).map(c =>
+      `<span class="comp-chip" title="${c.title}">${c.title.slice(0,55)}${c.title.length>55?'…':''}</span>`
+    ).join('');
+    document.getElementById('fetched-banner').style.display = 'block';
+
+  } catch(e) {
+    fetchErr.textContent = e.message || 'Failed to fetch listing. Check the ASIN and try again.';
+    fetchErr.style.display = 'block';
+  } finally {
+    btn.disabled = false; spin.style.display = 'none'; txt.textContent = 'Fetch Listing';
+  }
+}
+
+// ── ANALYZE ───────────────────────────────────
+async function runAnalysis() {
+  const title = document.getElementById('inp-title').value.trim();
+  const bullets = ['b1','b2','b3','b4','b5']
+    .map(id => document.getElementById(id).value.trim())
+    .filter(Boolean);
+  const err = document.getElementById('err-msg');
+
+  if (!title || bullets.length < 1) {
+    err.textContent = 'Please enter a product title and at least one bullet point.';
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 3000);
+    return;
+  }
+  err.style.display = 'none';
+
+  const ppcRaw = document.getElementById('inp-ppc').value.trim();
+  const ppcTerms = ppcRaw ? ppcRaw.split('\n').map(s => s.trim()).filter(Boolean) : [];
+
+  const btn    = document.getElementById('run-btn');
+  const spin   = document.getElementById('spinner');
+  const btnTxt = document.getElementById('btn-txt');
+  btn.disabled = true; spin.style.display = 'block';
+  btnTxt.textContent = 'Analyzing...';
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  const steps = ['ld1','ld2'];
+  const msgs = [
+    'Extracting keywords and auditing backend string...',
+    'Running gap analysis and generating optimised backend string...'
+  ];
+  let si = 0;
+  ldTimer = setInterval(() => {
+    if (si < steps.length - 1) {
+      const el = document.getElementById(steps[si]);
+      el.className = 'pd done'; el.textContent = '✓';
+      si++;
+      document.getElementById(steps[si]).className = 'pd active';
+      document.getElementById('ld-status').textContent = msgs[si];
+    }
+  }, 5000);
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        title,
+        bullets,
+        description:        document.getElementById('inp-desc').value.trim(),
+        backend_keywords:   document.getElementById('inp-backend').value.trim(),
+        category:           document.getElementById('inp-cat').value,
+        competitor_context: _competitorContext || [],
+        ppc_search_terms:   ppcTerms,
+        target_locale:      document.getElementById('inp-locale').value,
+      })
+    });
+
+    clearInterval(ldTimer);
+    steps.forEach(s => { const e=document.getElementById(s); e.className='pd done'; e.textContent='✓'; });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    render(data);
+
+  } catch(e) {
+    clearInterval(ldTimer);
+    err.textContent = e.message || 'Something went wrong. Please try again.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; spin.style.display = 'none';
+    btnTxt.textContent = 'Re-analyze →';
+    document.getElementById('loading').style.display = 'none';
+    steps.forEach((s,i) => { const e=document.getElementById(s); e.className='pd'; e.textContent=i+1; });
+  }
+}
+
+// ── RENDER ────────────────────────────────────
+function render(r) {
+  const audit    = r.backend_audit    || {};
+  const ksets    = r.backend_keyword_sets || {};
+  const byteplan = r.backend_byte_plan   || {};
+  const crit     = r.missing_critical    || [];
+  const sec      = r.missing_secondary   || [];
+  const gaps     = r.content_gaps        || [];
+
+  // ── Top strip
+  const gapScore = r.indexation_gap_score || 0;
+  const gapEl = document.getElementById('gap-score');
+  gapEl.textContent = gapScore;
+  gapEl.className = 'gs-val ' + (gapScore >= 70 ? 'gap-good' : gapScore >= 40 ? 'gap-mid' : 'gap-bad');
+
+  document.getElementById('crit-count').textContent = crit.length;
+  document.getElementById('traffic-missed').textContent = r.traffic_missed_estimate || '—';
+
+  // ── Rewritten title snippet
+  const snip = r.rewritten_title_snippet || '';
+  if (snip) {
+    document.getElementById('snip-title').textContent = snip;
+    document.getElementById('snip-wrap').style.display = 'block';
+  }
+
+  // ── Critical keywords table
+  document.getElementById('crit-badge').textContent = crit.length;
+  document.getElementById('crit-tbody').innerHTML = crit.map(kw => kwRow(kw, 'red')).join('');
+
+  // ── Secondary keywords table
+  document.getElementById('sec-badge').textContent = sec.length;
+  document.getElementById('sec-tbody').innerHTML = sec.map(kw => kwRow(kw, 'amber')).join('');
+
+  // ── Content gaps
+  if (gaps.length) {
+    document.getElementById('gaps-badge').textContent = gaps.length;
+    document.getElementById('content-gaps-list').innerHTML = gaps.map(g =>
+      `<li class="cg-item"><div class="cg-dot"></div><div>${g}</div></li>`
+    ).join('');
+    document.getElementById('content-gaps-card').style.display = 'block';
+  }
+
+  // ── Backend audit
+  const bytesUsed = audit.current_bytes_used || 0;
+  const bytesAvail = audit.bytes_available  || (249 - bytesUsed);
+  const pct = Math.round((bytesUsed / 249) * 100);
+  const dupeCount = (audit.current_duplicates||[]).length + (audit.current_internal_dupes||[]).length;
+
+  const auUsed = document.getElementById('au-used');
+  auUsed.textContent = bytesUsed;
+  auUsed.className = 'au-num ' + (bytesUsed > 249 ? 'bad' : bytesUsed >= 200 ? 'ok' : 'warn');
+
+  const auAvail = document.getElementById('au-avail');
+  auAvail.textContent = bytesAvail;
+  auAvail.className = 'au-num ' + (bytesAvail < 10 ? 'warn' : 'ok');
+
+  const auDupes = document.getElementById('au-dupes');
+  auDupes.textContent = dupeCount;
+  auDupes.className = 'au-num ' + (dupeCount > 0 ? 'bad' : 'ok');
+
+  document.getElementById('au-pct').textContent = pct + '%';
+  const bar = document.getElementById('byte-fill-bar');
+  bar.className = 'byte-fill ' + (bytesUsed > 249 ? 'fill-bad' : bytesUsed >= 200 ? 'fill-ok' : 'fill-warn');
+  setTimeout(() => bar.style.width = Math.min(pct, 100) + '%', 100);
+
+  const issueEls = (audit.compliance_issues||[]).map(i =>
+    `<span class="issue-chip">${i}</span>`
+  );
+  document.getElementById('au-issues').innerHTML = issueEls.join('');
+
+  // ── Generated backend string
+  const genStr = r.generated_backend_string || '';
+  _generatedBackend = genStr;
+  document.getElementById('gen-backend').textContent = genStr || '(none generated)';
+  const genBytes = new TextEncoder().encode(genStr).length;
+  document.getElementById('gen-bytes').textContent = genBytes + ' / 249 bytes';
+
+  // ── Keyword sets
+  const SET_DEFS = [
+    { key:'synonyms',        label:'Synonyms',            cls:'' },
+    { key:'long_tail',       label:'Long-tail phrases',   cls:'' },
+    { key:'spelling_variants',label:'Spelling variants',  cls:'' },
+    { key:'numeric_text_pairs',label:'Numeric & text pairs',cls:'' },
+    { key:'intent_phrases',  label:'Intent phrases',      cls:'' },
+    { key:'locale_variants', label:'Locale variants (IN)',cls:'ksc-locale' },
+    { key:'seasonal',        label:'Seasonal (rotate)',   cls:'ksc-seasonal' },
+    { key:'ppc_harvest',     label:'PPC harvest',         cls:'ksc-ppc' },
+  ];
+  document.getElementById('sets-grid').innerHTML = SET_DEFS.map(d => {
+    const terms = ksets[d.key] || [];
+    return `<div class="ks-cat">
+      <div class="ks-name">${d.label} <span style="color:var(--ink3)">(${terms.length})</span></div>
+      <div class="ks-chips">${
+        terms.length
+          ? terms.map(t => `<span class="ksc ${d.cls}">${t}</span>`).join('')
+          : '<span style="font-size:12px;color:var(--ink3)">none</span>'
+      }</div>
+    </div>`;
+  }).join('');
+
+  // ── Byte plan
+  const slots = byteplan.slot_breakdown || [];
+  if (slots.length) {
+    document.getElementById('plan-rows').innerHTML = slots.map(s =>
+      `<div class="plan-row">
+        <div class="plan-p">${s.priority}</div>
+        <div class="plan-name">${s.keyword_group}</div>
+        <div class="plan-bytes">${s.bytes_used} bytes</div>
+      </div>`
+    ).join('') +
+    `<div class="plan-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px">
+      <div class="plan-p" style="background:var(--ink);color:#fff;border-color:var(--ink)">Σ</div>
+      <div class="plan-name" style="font-weight:500;color:var(--ink)">Total allocated</div>
+      <div class="plan-bytes" style="color:var(--ink)">${byteplan.allocated || 0} / 249 bytes</div>
+    </div>`;
+    document.getElementById('plan-card').style.display = 'block';
+  }
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function kwRow(kw, color) {
+  const opp = (kw.opportunity_score || 0);
+  const fillColor = color === 'red' ? 'var(--red)' : 'var(--amber)';
+  const gapTag = kw.gap_type === 'frontend'
+    ? '<span class="tag tag-front">frontend</span>'
+    : kw.gap_type === 'backend'
+      ? '<span class="tag tag-back">backend</span>'
+      : '<span class="tag tag-both">both</span>';
+  const intentTag = `<span class="tag tag-disc">${kw.intent_type||'—'}</span>`;
+  return `<tr>
+    <td><span class="kw-word">${kw.keyword}</span><br><span style="font-size:11px;color:var(--ink3)">${kw.present_in_competitors||0}/5 competitors</span></td>
+    <td><span class="vol-est">~${(kw.monthly_volume||0).toLocaleString()}</span></td>
+    <td>
+      <div class="opp-bar">
+        <div class="opp-track"><div class="opp-fill" style="width:${Math.round(opp*100)}%;background:${fillColor}"></div></div>
+        <div class="opp-val">${opp.toFixed(2)}</div>
+      </div>
+    </td>
+    <td>${gapTag}</td>
+    <td><span class="place-tag">${kw.suggested_placement||'—'}</span></td>
+    <td>${intentTag}</td>
+  </tr>`;
+}
+
+function toggleSets(el) {
+  const body  = document.getElementById('sets-body');
+  const arrow = document.getElementById('sets-arrow');
+  const open  = body.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+}
+
+function copyBackend() {
+  if (!_generatedBackend) return;
+  navigator.clipboard.writeText(_generatedBackend).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+</script>
+</body>
+</html>

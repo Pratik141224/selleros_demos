@@ -14,9 +14,13 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from agents import run_ab_optimization
 from omkar_client import fetch_own_listing, fetch_competitor_summaries
+from shared.s3_cache import get as cache_get, put as cache_put
+from integration_bridge import get_lqs_scores, get_missing_keywords
 
 app = Flask(__name__)
 CORS(app)
+
+_TE_PREFIX = os.getenv("S3_RAW_PREFIX_TE", "TextEnhancement")
 
 
 @app.route("/")
@@ -61,10 +65,8 @@ def fetch_listing():
 
     try:
         competitors = fetch_competitor_summaries(
-            leaf_category_id=listing["leaf_category_id"],
-            own_asin=listing["asin"],
+            seed_asin=listing["asin"],
             n=5,
-            max_pages=5,
         )
     except Exception:
         competitors = []
@@ -86,10 +88,21 @@ def optimize():
             {"asin": str, "title": str, "bullets": [...], "description": str},
             ...
         ]
+        "asin":          str,   (optional, enables S3 caching keyed by ASIN)
+        "force_refresh": bool,  (optional, default false — bypass cache when true)
       }
     Returns full ABD optimization JSON.
     """
     data = request.get_json(force=True)
+
+    asin          = (data.get("asin") or "").strip().upper()
+    force_refresh = bool(data.get("force_refresh", False))
+
+    # ── S3 cache check ─────────────────────────────────────────────────────────
+    if asin and not force_refresh:
+        cached = cache_get(_TE_PREFIX, asin)
+        if cached:
+            return jsonify({**cached, "cached": True})
 
     title       = (data.get("title") or "").strip()
     bullets     = [b.strip() for b in (data.get("bullets") or []) if b and b.strip()]
@@ -103,14 +116,36 @@ def optimize():
         return jsonify({"error": "At least one bullet point is required."}), 400
 
     try:
+        # Pre-fetch LQS and keyword gap data via direct function calls (no HTTP)
+        lqs_context      = get_lqs_scores(title, bullets, description, category)
+        missing_keywords = get_missing_keywords(
+            title, bullets, description, competitor_context or [], category,
+            asin=asin,
+        )
+
         result = run_ab_optimization(
             title=title,
             bullets=bullets,
             description=description,
             category=category,
             competitor_context=competitor_context if competitor_context else None,
+            lqs_context=lqs_context or None,
+            missing_keywords=missing_keywords or None,
         )
-        return jsonify(result)
+
+        # ── S3 cache write ──────────────────────────────────────────────────────
+        if asin:
+            cache_put(_TE_PREFIX, asin, result)
+
+        return jsonify({
+            **result,
+            "cached": False,
+            "integration": {
+                "lqs_scores_used":     bool(lqs_context),
+                "keyword_gap_used":    bool(missing_keywords),
+                "keywords_injected":   len(missing_keywords),
+            },
+        })
 
     except EnvironmentError as e:
         return jsonify({"error": str(e)}), 500

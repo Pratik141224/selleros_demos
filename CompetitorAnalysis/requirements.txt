@@ -1,0 +1,12 @@
+requests
+beautifulsoup4
+lxml
+pandas
+pyarrow
+python-dotenv
+tqdm
+zyte-api
+fastapi
+uvicorn
+sentence-transformers
+s3fs
