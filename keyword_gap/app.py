@@ -100,12 +100,30 @@ def analyze():
         if cached:
             return jsonify({**cached, "cached": True})
 
-    title            = (data.get("title") or "").strip()
-    bullets          = [b.strip() for b in (data.get("bullets") or []) if b and b.strip()]
-    description      = (data.get("description") or "").strip()
-    backend_keywords = (data.get("backend_keywords") or "").strip()
-    category         = data.get("category", "electronics")
+    title              = (data.get("title") or "").strip()
+    bullets            = [b.strip() for b in (data.get("bullets") or []) if b and b.strip()]
+    description        = (data.get("description") or "").strip()
+    backend_keywords   = (data.get("backend_keywords") or "").strip()
+    category           = data.get("category", "custom")
+    leaf_category_name = (data.get("leaf_category_name") or "").strip()
     competitor_context = data.get("competitor_context") or []
+
+    # Resolve the actual product category so the LLM is never mislabelled.
+    # Priority order:
+    #   1. leaf_category_name forwarded from /api/fetch-listing  → 0 extra Zyte calls
+    #   2. ASIN Zyte lookup (cache-hit only — fetch-listing ran first)  → 1 fast call
+    #   3. Explicit category key from client (e.g. "fashion", "kitchen")
+    #   4. "custom" default → "General consumer product" (safe fallback)
+    if leaf_category_name and category in ("electronics", "custom", ""):
+        category = leaf_category_name
+    elif asin and category in ("electronics", "custom", ""):
+        try:
+            from shared.zyte_client import fetch_own_listing as _fetch_listing
+            _leaf = (_fetch_listing(asin) or {}).get("leaf_category_name", "")
+            if _leaf:
+                category = _leaf
+        except Exception:
+            pass  # keep default — never block the analysis on a category lookup
     ppc_search_terms = [t.strip() for t in (data.get("ppc_search_terms") or []) if t and t.strip()]
     target_locale    = (data.get("target_locale") or "IN").strip().upper()
 

@@ -28,7 +28,7 @@ import s3fs
 logger = logging.getLogger(__name__)
 
 _BUCKET   = os.getenv("S3_BUCKET", "opsell")
-_TTL_DAYS = 15
+_TTL_DAYS = 14
 
 _fs: s3fs.S3FileSystem | None = None
 

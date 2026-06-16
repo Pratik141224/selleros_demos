@@ -374,7 +374,7 @@ def run_keyword_gap_analysis(
     description: str = "",
     backend_keywords: str = "",
     competitors: list | None = None,
-    category: str = "electronics",
+    category: str = "custom",
     ppc_search_terms: list | None = None,
     target_locale: str = "IN",
     asin: str = "",

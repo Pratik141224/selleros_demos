@@ -29,6 +29,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from enrichment_api.models import ASINRequest, EnrichRequest
 from enrichment_api import orchestrator as orch
+from shared.s3_cache import get as cache_get
 
 app = FastAPI(title="SellerOS Enrichment API", version="1.0.0")
 app.add_middleware(
@@ -53,8 +54,19 @@ def competitors(req: ASINRequest):
 
 @app.post("/api/keyword-gap")
 def keyword_gap(req: ASINRequest):
-    """Fetch listing + competitors, then run keyword gap analysis."""
-    listing   = orch.fetch_listing(req.asin, req.country)
+    """
+    Fetch listing + competitors, then run keyword gap analysis.
+
+    Required body: {"asin": "<10-char ASIN>"}
+    Optional:      {"country": "IN", "force_refresh": false}
+    """
+    try:
+        listing = orch.fetch_listing(req.asin, req.country)
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Listing fetch failed: {exc}")
+
     comps     = orch.run_competitors(req.asin, req.force_refresh)
     summaries = orch._comp_summaries(comps)
     return orch.run_keyword_gap(req.asin, listing, summaries, req.force_refresh)
@@ -71,14 +83,42 @@ def lqs(req: ASINRequest):
 
 @app.post("/api/enhance")
 def enhance(req: ASINRequest):
-    """Full 3-pass ABD text enhancement enriched with keyword gap + A9 context."""
+    """
+    Full 3-pass ABD text enhancement.
+
+    Requires /api/lqs to have been run first for this ASIN — scores are read
+    from the LQS cache so Enhancement uses the exact same A9 + Rufus values.
+    Pass force_refresh=true to re-run LQS inline and bust both caches.
+    """
+    # ── Require LQS scores to be cached ──────────────────────────────────────
+    lqs_cached = cache_get(orch._LQS_PREFIX, req.asin)
+    if not lqs_cached and not req.force_refresh:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"LQS scores not found for {req.asin}. "
+                "Run POST /api/lqs first, or pass force_refresh=true to compute inline."
+            ),
+        )
+    if req.force_refresh or not lqs_cached:
+        lqs_cached = orch.run_lqs(req.asin, req.country, force_refresh=True)
+        if not lqs_cached:
+            raise HTTPException(status_code=502, detail="LQS pipeline returned no data")
+
+    # ── Fetch listing + competitors ───────────────────────────────────────────
     listing   = orch.fetch_listing(req.asin, req.country)
     comps     = orch.run_competitors(req.asin, req.force_refresh)
     summaries = orch._comp_summaries(comps)
-    kw        = orch.run_keyword_gap(req.asin, listing, summaries, req.force_refresh)
-    a9        = orch.get_a9_context(listing)
-    missing   = orch._extract_missing_keywords(kw)
-    return orch.run_enhance(req.asin, listing, summaries, a9, missing, req.force_refresh)
+
+    # ── Keyword gap: read from cache; run inline if missing ───────────────────
+    kw = cache_get(orch._KG_PREFIX, req.asin) or {}
+    if not kw:
+        kw = orch.run_keyword_gap(req.asin, listing, summaries, req.force_refresh)
+
+    # ── Build lqs_context from cached LQS + keyword gap scores ───────────────
+    a9_context = orch._lqs_context_for_enhance(lqs_cached, kw)
+    missing    = orch._extract_missing_keywords(kw)
+    return orch.run_enhance(req.asin, listing, summaries, a9_context, missing, req.force_refresh)
 
 
 @app.post("/api/enrich")

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
@@ -54,6 +55,11 @@ def _fetch_competitors_from_analysis(seed_asin: str, own_asin: str, n: int) -> l
     Returns [] silently on any failure.
     """
     try:
+        _project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+        _comp_root = os.path.join(_project_root, "CompetitorAnalysis")
+        for _p in (_comp_root, _project_root):
+            if _p not in sys.path:
+                sys.path.insert(0, _p)
         from CompetitorAnalysis.src.services.competitor_service import find_competitors  # noqa: PLC0415
         field_map = _load_comp_field_map()
         raw = find_competitors(seed_asin).get("competitors") or []

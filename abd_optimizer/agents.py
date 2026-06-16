@@ -377,13 +377,17 @@ def run_ab_optimization(
 
     # Build optional context blocks injected into Pass 1
     lqs_block = ""
-    if lqs_context and lqs_context.get("a9_score") is not None:
-        lqs_block = (
-            "ORIGINAL LISTING SCORES (pre-computed by LQS — do NOT re-score, use these exact values):\n"
-            f"  a9_compliance: {lqs_context['a9_score']}\n"
-        )
+    if lqs_context and any(lqs_context.get(k) is not None for k in ("a9_score", "rufus_readiness", "keywords_found")):
+        lines = ["ORIGINAL LISTING SCORES (pre-computed by LQS/keyword-gap — do NOT re-score, use these exact values):"]
+        if lqs_context.get("a9_score") is not None:
+            lines.append(f"  a9_compliance: {lqs_context['a9_score']}")
+        if lqs_context.get("rufus_readiness") is not None:
+            lines.append(f"  rufus_readiness: {lqs_context['rufus_readiness']}")
+        if lqs_context.get("keywords_found") is not None:
+            lines.append(f"  keywords_found: {lqs_context['keywords_found']}")
         if lqs_context.get("flags"):
-            lqs_block += f"  a9_flags: {', '.join(lqs_context['flags'][:5])}\n"
+            lines.append(f"  a9_flags: {', '.join(lqs_context['flags'][:5])}")
+        lqs_block = "\n".join(lines) + "\n"
 
     kw_block = ""
     if missing_keywords:
@@ -414,10 +418,15 @@ def run_ab_optimization(
     va_title  = variant_a.get("title", title)
     va_scores = variant_a.get("scores", {})
 
-    # Override LLM-estimated original_scores with real LQS values when available
-    if lqs_context and lqs_context.get("a9_score") is not None:
+    # Override LLM-estimated original_scores with real LQS/keyword-gap values
+    if lqs_context and any(lqs_context.get(k) is not None for k in ("a9_score", "rufus_readiness", "keywords_found")):
         orig = pass1_result.setdefault("original_scores", {})
-        orig["a9_compliance"] = lqs_context["a9_score"]
+        if lqs_context.get("a9_score") is not None:
+            orig["a9_compliance"] = lqs_context["a9_score"]
+        if lqs_context.get("rufus_readiness") is not None:
+            orig["rufus_readiness"] = lqs_context["rufus_readiness"]
+        if lqs_context.get("keywords_found") is not None:
+            orig["keywords_found"] = lqs_context["keywords_found"]
 
     # Pass 1 validation
     if len(va_title) > 200:

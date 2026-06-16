@@ -14,6 +14,13 @@ class ASINRequest(BaseModel):
     def normalise_asin(cls, v: str) -> str:
         return v.strip().upper()
 
+    @field_validator("force_refresh", mode="before")
+    @classmethod
+    def coerce_bool(cls, v) -> bool:
+        if isinstance(v, str):
+            return v.strip().lower() in ("true", "1", "yes")
+        return bool(v)
+
 
 class EnrichRequest(ASINRequest):
     steps: list[str] = ["competitors", "keywords", "lqs", "enhance"]

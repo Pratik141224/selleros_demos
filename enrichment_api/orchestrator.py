@@ -31,8 +31,9 @@ if _COMP_ROOT not in sys.path:
 from shared.zyte_client import fetch_own_listing
 from shared.s3_cache import get as cache_get, put as cache_put
 
-_KG_PREFIX = os.getenv("S3_RAW_PREFIX_KG", "KeywordGap")
-_TE_PREFIX = os.getenv("S3_RAW_PREFIX_TE", "TextEnhancement")
+_KG_PREFIX  = os.getenv("S3_RAW_PREFIX_KG",  "KeywordGap")
+_TE_PREFIX  = os.getenv("S3_RAW_PREFIX_TE",  "TextEnhancement")
+_LQS_PREFIX = os.getenv("S3_RAW_PREFIX_LQS", "LQS")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -94,6 +95,8 @@ def run_keyword_gap(
             bullets=listing.get("bullets", []),
             description=listing.get("description", ""),
             competitors=comp_summaries,
+            category=listing.get("leaf_category_name", "custom"),
+            asin=asin,
         )
         if asin:
             cache_put(_KG_PREFIX, asin, result)
@@ -103,20 +106,33 @@ def run_keyword_gap(
         return {}
 
 
-def run_lqs(asin: str, country: str = "IN") -> dict:
+def run_lqs(asin: str, country: str = "IN", force_refresh: bool = False) -> dict:
     """
     Direct Python call into LQS asin_pipeline.
+
+    Results are cached under S3: LQS/{asin}/latest.json  (14-day TTL)
+                                  LQS/{asin}/history/{ts}.json  (append-only)
+
+    Pass force_refresh=True to bypass the cache and write a fresh snapshot.
 
     sys.path ordering ensures:
       - selleros_demos/shared/ (cached) → resolves shared.llm_client + shared.keyword_bridge via shims
       - LQS/ added here → resolves marketplaces.*, lqs_pipeline.*, config (LQS/config.py)
       - CompetitorAnalysis/config/ has no __init__.py → namespace portion, LQS/config.py wins
     """
+    if asin and not force_refresh:
+        cached = cache_get(_LQS_PREFIX, asin)
+        if cached:
+            return cached
+
     try:
         if _LQS not in sys.path:
             sys.path.append(_LQS)
         from marketplaces.amazon.asin_pipeline import run as lqs_run
-        return _sanitize(lqs_run(asin, country))
+        result = _sanitize(lqs_run(asin, country))
+        if asin and result:
+            cache_put(_LQS_PREFIX, asin, result)
+        return result
     except Exception as exc:
         logger.warning("run_lqs(%s) failed — %s", asin, exc)
         return {}
@@ -134,6 +150,35 @@ def get_a9_context(listing: dict) -> dict:
     except Exception as exc:
         logger.warning("get_a9_context failed — %s", exc)
         return {}
+
+
+def _lqs_context_for_enhance(lqs_result: dict, kw_result: dict) -> dict:
+    """
+    Build the lqs_context dict for run_enhance from already-computed LQS and
+    keyword gap results.  Using the real pipeline scores avoids asking Claude to
+    re-score the original listing in Pass 1, which would produce divergent values.
+
+    Falls back gracefully — if a field is missing the key is omitted so
+    run_ab_optimization keeps its existing fallback behaviour.
+    """
+    target = next(
+        (r for r in lqs_result.get("results", []) if r.get("label") == "TARGET"),
+        {},
+    )
+    scores = target.get("scores", {})
+
+    ctx: dict = {}
+    if scores.get("a9_compliance") is not None:
+        ctx["a9_score"] = scores["a9_compliance"]
+    if scores.get("rufus_readiness") is not None:
+        ctx["rufus_readiness"] = scores["rufus_readiness"]
+    # seller_keywords is the deterministic set already present in the listing
+    seller_kws = kw_result.get("seller_keywords", [])
+    if seller_kws:
+        ctx["keywords_found"] = len(seller_kws)
+    if target.get("flags"):
+        ctx["flags"] = target["flags"]
+    return ctx
 
 
 def _extract_missing_keywords(kw_result: dict) -> list[str]:
@@ -201,15 +246,24 @@ def run_enrich(
     comps     = (f_comps.result() if f_comps else []) or []
     summaries = _comp_summaries(comps)
 
-    # Phase 2 — keyword gap + A9 score + full LQS in parallel
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    # Phase 2 — keyword gap + full LQS in parallel
+    # (a9_context is derived from lqs_result after this phase — no extra call needed)
+    with ThreadPoolExecutor(max_workers=2) as pool:
         f_kw  = pool.submit(run_keyword_gap, asin, listing, summaries, force_refresh) if "keywords" in steps_set else None
-        f_a9  = pool.submit(get_a9_context,  listing)                                  if "enhance"  in steps_set else None
-        f_lqs = pool.submit(run_lqs, asin, country)                                    if "lqs"      in steps_set else None
+        f_lqs = pool.submit(run_lqs, asin, country, force_refresh)                     if "lqs"      in steps_set else None
 
     kw_result  = (f_kw.result()  if f_kw  else {}) or {}
-    a9_context = (f_a9.result()  if f_a9  else {}) or {}
     lqs_result = (f_lqs.result() if f_lqs else {}) or {}
+
+    # Build lqs_context for Enhancement from the real LQS + keyword gap scores.
+    # If LQS wasn't requested, fall back to the deterministic-only A9 scorer.
+    if "enhance" in steps_set:
+        if lqs_result:
+            a9_context = _lqs_context_for_enhance(lqs_result, kw_result)
+        else:
+            a9_context = get_a9_context(listing)
+    else:
+        a9_context = {}
 
     missing_kws = _extract_missing_keywords(kw_result)
 
